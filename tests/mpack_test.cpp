@@ -6,7 +6,6 @@ TEST(MsgpackTest, Sample) {
 
     mpack::packer p;
     p << 1;
-    //std::cout << p.get_type() << std::endl;
 
     auto buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -14,9 +13,6 @@ TEST(MsgpackTest, Sample) {
     mpack::reference_unpacker u(&buffer[0], buffer.size());
 
     int n=-1;
-    if(!u.unpack(n)){
-        return;    
-    }
-
+    u >> n;
     EXPECT_EQ(1, n);
 }
