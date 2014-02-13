@@ -9,9 +9,7 @@ TEST(MsgpackTest, Sample) {
     //std::cout << p.get_type() << std::endl;
 
     auto buffer=p.packed_buffer;
-    if(buffer.empty()){
-        return;
-    }
+    ASSERT_FALSE(buffer.empty());
 
     mpack::reference_unpacker u(&buffer[0], buffer.size());
 
