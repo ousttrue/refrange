@@ -8,7 +8,7 @@
 TEST(MsgpackTest, nil) 
 {
     // packing
-    mpack::vector_packer p;
+    mpack::msgpack::vector_packer p;
     p.pack_nil();
     auto &buffer=p.packed_buffer;
 
@@ -24,7 +24,7 @@ TEST(MsgpackTest, nil)
 TEST(MsgpackTest, false)
 {
     // packing
-    mpack::vector_packer p;
+    mpack::msgpack::vector_packer p;
     p.pack_bool(false);
     auto &buffer=p.packed_buffer;
 
@@ -40,7 +40,7 @@ TEST(MsgpackTest, false)
 TEST(MsgpackTest, true)
 {
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p.pack_bool(true);
     auto &buffer=p.packed_buffer;
 
@@ -56,17 +56,17 @@ TEST(MsgpackTest, true)
 TEST(MsgpackTest, small_int)
 {
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << 1;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
     ASSERT_EQ(1, buffer.size());
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::positive_fixint>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::positive_fixint>(buffer[0]));
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     int n=-0;
     u >> n;
     EXPECT_EQ(1, n);
@@ -79,17 +79,17 @@ TEST(MsgpackTest, small_int)
 TEST(MsgpackTest, small_negative_int)
 {
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << -1;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
     ASSERT_EQ(1, buffer.size());
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::negative_fixint>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::negative_fixint>(buffer[0]));
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(-1, n);
@@ -102,7 +102,7 @@ TEST(MsgpackTest, small_negative_int)
 TEST(MsgpackTest, uint8)
 {
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << 128;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -112,7 +112,7 @@ TEST(MsgpackTest, uint8)
     EXPECT_EQ(0xcc, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(128, n);
@@ -125,7 +125,7 @@ TEST(MsgpackTest, uint8)
 TEST(MsgpackTest, uint16)
 {
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << 256;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -135,7 +135,7 @@ TEST(MsgpackTest, uint16)
     EXPECT_EQ(0xcd, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(256, n);
@@ -151,7 +151,7 @@ TEST(MsgpackTest, uint32)
         int value=65536;
 
         // packing
-        mpack::vector_packer p;
+		mpack::msgpack::vector_packer p;
         p << value;
         auto &buffer=p.packed_buffer;
         ASSERT_FALSE(buffer.empty());
@@ -161,7 +161,7 @@ TEST(MsgpackTest, uint32)
         EXPECT_EQ(0xce, buffer[0]);
 
         // unpack
-        auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+		auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
         int n=0;
         u >> n;
         EXPECT_EQ(value, n);
@@ -171,7 +171,7 @@ TEST(MsgpackTest, uint32)
         unsigned int value=4294967295;
 
         // packing
-        mpack::vector_packer p;
+		mpack::msgpack::vector_packer p;
         p << value;
         auto &buffer=p.packed_buffer;
         ASSERT_FALSE(buffer.empty());
@@ -181,7 +181,7 @@ TEST(MsgpackTest, uint32)
         EXPECT_EQ(0xce, buffer[0]);
 
         // unpack
-        auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+		auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
         int n=0;
         u >> n;
         EXPECT_EQ(value, n);
@@ -197,7 +197,7 @@ TEST(MsgpackTest, uint64)
     unsigned long long value=4294967296;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -207,7 +207,7 @@ TEST(MsgpackTest, uint64)
     EXPECT_EQ(0xcf, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     unsigned long long n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -222,7 +222,7 @@ TEST(MsgpackTest, int8)
     char value=-32;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -232,7 +232,7 @@ TEST(MsgpackTest, int8)
     EXPECT_EQ(0xd0, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     char n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -247,7 +247,7 @@ TEST(MsgpackTest, int16)
     int value=-256;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -257,7 +257,7 @@ TEST(MsgpackTest, int16)
     EXPECT_EQ(0xd1, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -272,7 +272,7 @@ TEST(MsgpackTest, int32)
     int value=-65535;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -282,7 +282,7 @@ TEST(MsgpackTest, int32)
     EXPECT_EQ(0xd2, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -297,7 +297,7 @@ TEST(MsgpackTest, int64)
     long long value=-4294967296;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -307,7 +307,7 @@ TEST(MsgpackTest, int64)
     EXPECT_EQ(0xd3, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     long long n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -322,7 +322,7 @@ TEST(MsgpackTest, float32)
     float value=1.5f;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -332,7 +332,7 @@ TEST(MsgpackTest, float32)
     EXPECT_EQ(0xca, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     float n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -347,7 +347,7 @@ TEST(MsgpackTest, float64)
     double value=1.111111111111111111111111111111111111111111111111;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -357,7 +357,7 @@ TEST(MsgpackTest, float64)
     EXPECT_EQ(0xcb, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     double n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -372,17 +372,17 @@ TEST(MsgpackTest, fixstr)
     auto str="abc";
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << str;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
     ASSERT_EQ(1+3, buffer.size());
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixstr>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixstr>(buffer[0]));
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::string out;
     u >> out;
 
@@ -403,7 +403,7 @@ TEST(MsgpackTest, str8)
         ;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << str;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -413,7 +413,7 @@ TEST(MsgpackTest, str8)
     EXPECT_EQ(0xd9, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::string out;
     u >> out;
 
@@ -435,7 +435,7 @@ TEST(MsgpackTest, str16)
         ;
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << str;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -445,7 +445,7 @@ TEST(MsgpackTest, str16)
     EXPECT_EQ(0xda, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::string out;
     u >> out;
 
@@ -465,7 +465,7 @@ TEST(MsgpackTest, str32)
     }
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << str;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -475,7 +475,7 @@ TEST(MsgpackTest, str32)
     EXPECT_EQ(0xdb, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::string out;
     u >> out;
 
@@ -492,7 +492,7 @@ TEST(MsgpackTest, bin8)
     buf.push_back(0);
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << buf;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -502,7 +502,7 @@ TEST(MsgpackTest, bin8)
     EXPECT_EQ(0xc4, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::vector<unsigned char> out;
     u >> out;
 
@@ -521,7 +521,7 @@ TEST(MsgpackTest, bin16)
     }
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << buf;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -531,7 +531,7 @@ TEST(MsgpackTest, bin16)
     EXPECT_EQ(0xc5, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::vector<unsigned char> out;
     u >> out;
 
@@ -550,7 +550,7 @@ TEST(MsgpackTest, bin32)
     }
 
     // packing
-    mpack::vector_packer p;
+	mpack::msgpack::vector_packer p;
     p << buf;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -560,7 +560,7 @@ TEST(MsgpackTest, bin32)
     EXPECT_EQ(0xc6, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     std::vector<unsigned char> out;
     u >> out;
 
@@ -574,8 +574,8 @@ TEST(MsgpackTest, bin32)
 TEST(MsgpackTest, fixarray)
 {
     // packing
-    mpack::vector_packer p;
-    p << mpack::array_context(3) 
+	mpack::msgpack::vector_packer p;
+	p << mpack::msgpack::array_context(3)
         << 1 << "str" << true
 		;
 
@@ -583,13 +583,13 @@ TEST(MsgpackTest, fixarray)
     ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixarray>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixarray>(buffer[0]));
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_array());
 
-    auto c=mpack::array_context();
+	auto c = mpack::msgpack::array_context();
     int n;
     std::string str;
     bool b;
@@ -608,8 +608,8 @@ TEST(MsgpackTest, fixarray)
 TEST(MsgpackTest, array16)
 {
     // packing
-    mpack::vector_packer p;
-    p << mpack::array_context(16) 
+	mpack::msgpack::vector_packer p;
+	p << mpack::msgpack::array_context(16)
         << 1 << "str1" << true << 1.5f
         << 2 << "str2" << false << 1.6f
         << 3 << "str3" << true << 1.7
@@ -623,11 +623,11 @@ TEST(MsgpackTest, array16)
     EXPECT_EQ(0xdc, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_array());
 
     // array
-    auto c=mpack::array_context();
+	auto c = mpack::msgpack::array_context();
     u >> c ;
     EXPECT_EQ(16, c.size);
 
@@ -652,8 +652,8 @@ TEST(MsgpackTest, array16)
 TEST(MsgpackTest, array32)
 {
     // packing
-    mpack::vector_packer p;
-    auto pc=mpack::array_context(0xFFFF+1);
+	mpack::msgpack::vector_packer p;
+	auto pc = mpack::msgpack::array_context(0xFFFF + 1);
     p << pc;
     for(int i=0; i<pc.size; ++i){
         p << i;
@@ -666,11 +666,11 @@ TEST(MsgpackTest, array32)
     EXPECT_EQ(0xdd, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_array());
 
     // array
-    auto uc=mpack::array_context();
+	auto uc = mpack::msgpack::array_context();
     u >> uc ;
     EXPECT_EQ(pc.size, uc.size);
 
@@ -688,8 +688,8 @@ TEST(MsgpackTest, array32)
 TEST(MsgpackTest, fixmap)
 {
     // packing
-    mpack::vector_packer p;
-    p << mpack::map_context(3) 
+	mpack::msgpack::vector_packer p;
+	p << mpack::msgpack::map_context(3)
         << "key1" << 0
         << "key2" << 1
         << "key3" << 2
@@ -699,13 +699,13 @@ TEST(MsgpackTest, fixmap)
     ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixmap>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixmap>(buffer[0]));
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_map());
 
-    auto c=mpack::map_context();
+	auto c = mpack::msgpack::map_context();
     u >> c;
     EXPECT_EQ(3, c.size);
 
@@ -727,8 +727,8 @@ TEST(MsgpackTest, fixmap)
 TEST(MsgpackTest, map16)
 {
     // packing
-    mpack::vector_packer p;
-    p << mpack::map_context(17) 
+	mpack::msgpack::vector_packer p;
+	p << mpack::msgpack::map_context(17)
         << "key1" << 0 << "key2" << 1 << "key3" << 2 << "key4" << 3
         << "key5" << 4 << "key6" << 5 << "key7" << 6 << "key8" << 7
         << "key9" << 8 << "key10" << 9 << "key11" << 10 << "key12" << 11
@@ -743,11 +743,11 @@ TEST(MsgpackTest, map16)
     EXPECT_EQ(0xde, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_map());
 
     // map
-    auto c=mpack::map_context();
+	auto c = mpack::msgpack::map_context();
     u >> c ;
     EXPECT_EQ(17, c.size);
 
@@ -769,8 +769,8 @@ TEST(MsgpackTest, map16)
 TEST(MsgpackTest, map32)
 {
     // packing
-    mpack::vector_packer p;
-    auto pc=mpack::map_context(0xFFFF+1);
+	mpack::msgpack::vector_packer p;
+	auto pc = mpack::msgpack::map_context(0xFFFF + 1);
     p << pc; 
     for(int i=0; i<pc.size; ++i){
         std::stringstream ss;
@@ -785,11 +785,11 @@ TEST(MsgpackTest, map32)
     EXPECT_EQ(0xdf, buffer[0]);
 
     // unpack
-    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_map());
 
     // map
-    auto uc=mpack::map_context();
+	auto uc = mpack::msgpack::map_context();
     u >> uc ;
     EXPECT_EQ(pc.size, uc.size);
 
