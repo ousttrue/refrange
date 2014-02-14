@@ -24,23 +24,29 @@ namespace mpack
     struct fixarray
     {
         enum bits_t { bits=0x90 };
-        enum mask_t { mask=0xF0 };
+        enum mask_t { mask=0xf0 };
     };
     struct fixstr
     {
         enum bits_t { bits=0xa0 };
-        enum mask_t { mask=0xE0};
+        enum mask_t { mask=0xe0};
     };
     struct negative_fixint
     {
         enum bits_t { bits=0xe0 };
-        enum mask_t { mask=0xE0 };
+        enum mask_t { mask=0xe0 };
     };
 
     template<class T>
         bool partial_bit_equal(unsigned char byte)
         {
             return T::bits==(T::mask & byte);
+        }
+
+    template<class T>
+        char extract_head_byte(unsigned char byte)
+        {
+            return static_cast<char>(byte & ~T::mask);
         }
 
     enum byte_type
@@ -104,7 +110,7 @@ namespace mpack
             if(n<0){
                 if(n>-0x1f){
                     // negative fix int
-                    auto v = 0xe0 | -static_cast<char>(n);
+                    auto v = negative_fixint::bits | -static_cast<char>(n);
                     write_value(static_cast<char>(v));
                     return *this;
                 }
@@ -180,6 +186,25 @@ namespace mpack
             return *this;
         }
 
+        packer& pack_str(const char *p)
+        {
+            return pack_str(p, strlen(p));
+        }
+
+        packer& pack_str(const char *p, size_t len)
+        {
+            if(len<32){
+                auto v = fixstr::bits | len;
+                write_value(static_cast<char>(v));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
+            else{
+                throw std::exception("not implemented. at " __FUNCTION__);
+            }
+            return *this;
+        }
+
     private:
         void write_head_byte(byte_type head_byte)
         {
@@ -207,6 +232,7 @@ namespace mpack
     inline packer& operator<<(packer &packer, const float t) { return packer.pack_float(t); }
     inline packer& operator<<(packer &packer, const double t) { return packer.pack_double(t); }
 
+    inline packer& operator<<(packer &packer, const char *t) { return packer.pack_str(t); }
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
@@ -316,12 +342,29 @@ namespace mpack
                         t=static_cast<char>(head_byte);
                     }
                     else if(partial_bit_equal<negative_fixint>(head_byte)){
-                        t=-static_cast<char>(head_byte & ~negative_fixint::mask);
+                        t=-extract_head_byte<negative_fixint>(head_byte);
                     }
                     else{
                         throw std::exception("not implemented. at " __FUNCTION__);
                     }
                     break;
+            }
+
+            return *this;
+        }
+
+        unpacker& unpack_string(std::string &s)
+        {
+            unsigned char head_byte=read_value<unsigned char>();
+
+            if(partial_bit_equal<fixstr>(head_byte)){
+                auto len=extract_head_byte<fixstr>(head_byte);
+                for(size_t i=0; i<len; ++i){
+                    s.push_back(read_value<char>());
+                }
+            }
+            else{
+                throw std::exception("not implemented. at " __FUNCTION__);
             }
 
             return *this;
@@ -350,6 +393,8 @@ namespace mpack
 
     inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_float(t); }
     inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
+
+    inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack_string(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility

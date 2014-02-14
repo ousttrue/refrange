@@ -363,3 +363,29 @@ TEST(MsgpackTest, float64)
     EXPECT_EQ(value, n);
 }
 
+/// fixstr stores a byte array whose length is upto 31 bytes:
+/// +--------+========+
+/// |101XXXXX|  data  |
+/// +--------+========+
+TEST(MsgpackTest, fixstr)
+{
+    auto str="abc";
+
+    // packing
+    mpack::vector_packer p;
+    p << str;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(4, buffer.size());
+    ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixstr>(buffer[0]));
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    std::string out;
+    u >> out;
+
+    EXPECT_EQ(out, str);
+}
+
