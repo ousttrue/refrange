@@ -36,39 +36,39 @@ namespace mpack
             return T::bits==(T::mask & byte);
         }
 
-    enum type
+    enum byte_type
     {
-        Nil=0xc0,
-        False=0xc2,
-        True=0xc3,
-        Bin8=0xc4,
-        Bin16=0xc5,
-        Bin32=0xc6,
-        Ext8=0xc7,
-        Ext16=0xc8,
-        Ext32=0xc9,
-        Float32=0xca,
-        Float64=0xcb,
-        Uint8=0xcc,
-        Uint16=0xcd,
-        Uint32=0xce,
-        Uint64=0xcf,
-        Int8=0xd0,
-        Int16=0xd1,
-        Int32=0xd2,
-        Int64=0xd3,
-        Fixext1=0xd4,
-        Fixext2=0xd5,
-        Fixext4=0xd6,
-        Fixext8=0xd7,
-        Fixext16=0xd8,
-        Str8=0xd9,
-        Str16=0xda,
-        Str32=0xdb,
-        Array16=0xdc,
-        Array32=0xdd,
-        Map16=0xde,
-        Map32=0xdf,
+        byte_nil=0xc0,
+        byte_false=0xc2,
+        byte_true=0xc3,
+        byte_bin8=0xc4,
+        byte_bin16=0xc5,
+        byte_bin32=0xc6,
+        byte_ext8=0xc7,
+        byte_ext16=0xc8,
+        byte_ext32=0xc9,
+        byte_float32=0xca,
+        byte_float64=0xcb,
+        byte_uint8=0xcc,
+        byte_uint16=0xcd,
+        byte_uint32=0xce,
+        byte_uint64=0xcf,
+        byte_int8=0xd0,
+        byte_int16=0xd1,
+        byte_int32=0xd2,
+        byte_int64=0xd3,
+        byte_fixext1=0xd4,
+        byte_fixext2=0xd5,
+        byte_fixext4=0xd6,
+        byte_fixext8=0xd7,
+        byte_fixext16=0xd8,
+        byte_str8=0xd9,
+        byte_str16=0xda,
+        byte_str32=0xdb,
+        byte_array16=0xdc,
+        byte_array32=0xdd,
+        byte_map16=0xde,
+        byte_map32=0xdf,
     };
 
     class packer
@@ -108,7 +108,7 @@ namespace mpack
                         return *this;
                     }
                     if(n<=0xff){
-                        packed_buffer.push_back(Uint8);
+						packed_buffer.push_back(byte_uint8);
                         packed_buffer.push_back(static_cast<unsigned char>(n));
                         return *this;
                     }
@@ -155,7 +155,7 @@ namespace mpack
 
             switch(*m_p)
             {
-                case Uint8:
+                case byte_uint8:
                     {
                         ++m_p;
                         unsigned char n=*m_p++;
