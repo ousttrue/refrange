@@ -194,13 +194,35 @@ namespace mpack
         packer& pack_str(const char *p, size_t len)
         {
             if(len<32){
+                // fixstr
                 auto v = fixstr::bits | len;
                 write_value(static_cast<char>(v));
                 size_t size=m_writer((unsigned char*)p, len);
                 assert(size==len);
             }
+            else if(len<0xff){
+                // str8
+                write_head_byte(byte_str8);
+                write_value(static_cast<unsigned char>(len));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
+            else if(len<0xffff){
+                // str16
+                write_head_byte(byte_str16);
+                write_value(static_cast<unsigned short>(len));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
+            else if(len<0xffffffff){
+                // str32
+                write_head_byte(byte_str32);
+                write_value(static_cast<unsigned int>(len));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
             else{
-                throw std::exception("not implemented. at " __FUNCTION__);
+                throw std::out_of_range(__FUNCTION__);
             }
             return *this;
         }
@@ -357,14 +379,46 @@ namespace mpack
         {
             unsigned char head_byte=read_value<unsigned char>();
 
-            if(partial_bit_equal<fixstr>(head_byte)){
-                auto len=extract_head_byte<fixstr>(head_byte);
-                for(size_t i=0; i<len; ++i){
-                    s.push_back(read_value<char>());
-                }
-            }
-            else{
-                throw std::exception("not implemented. at " __FUNCTION__);
+            switch(head_byte)
+            {
+                case byte_str8:
+                    {
+                        auto len=read_value<unsigned char>();
+                        for(size_t i=0; i<len; ++i){
+                            s.push_back(read_value<char>());
+                        }
+                    }
+                    break;
+
+                case byte_str16:
+                    {
+                        auto len=read_value<unsigned short>();
+                        for(size_t i=0; i<len; ++i){
+                            s.push_back(read_value<char>());
+                        }
+                    }
+                    break;
+
+                case byte_str32:
+                    {
+                        auto len=read_value<unsigned int>();
+                        for(size_t i=0; i<len; ++i){
+                            s.push_back(read_value<char>());
+                        }
+                    }
+                    break;
+
+                default:
+                    if(partial_bit_equal<fixstr>(head_byte)){
+                        auto len=extract_head_byte<fixstr>(head_byte);
+                        for(size_t i=0; i<len; ++i){
+                            s.push_back(read_value<char>());
+                        }
+                    }
+                    else{
+                        throw std::exception("not implemented. at " __FUNCTION__);
+                    }
+                    break;
             }
 
             return *this;
@@ -375,9 +429,15 @@ namespace mpack
         T read_value()
         {
             T n;
-            size_t size=m_reader((unsigned char*)&n, sizeof(T));
-            assert(size==sizeof(T));
+            size_t size=read((unsigned char*)&n, sizeof(T));
             return n;
+        }
+            
+        size_t read(unsigned char *p, size_t len)
+        {
+            size_t size=m_reader(p, len);
+            assert(size==len);
+            return size;
         }
     };
 

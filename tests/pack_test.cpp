@@ -378,8 +378,39 @@ TEST(MsgpackTest, fixstr)
     ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(4, buffer.size());
+    ASSERT_EQ(1+3, buffer.size());
     ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixstr>(buffer[0]));
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    std::string out;
+    u >> out;
+
+    EXPECT_EQ(out, str);
+}
+
+/// str 8 stores a byte array whose length is upto (2^8)-1 bytes:
+/// +--------+--------+========+
+/// |  0xd9  |YYYYYYYY|  data  |
+/// +--------+--------+========+
+TEST(MsgpackTest, str8)
+{
+    auto str=
+        "0123456789"
+        "0123456789"
+        "0123456789"
+        "01"
+        ;
+
+    // packing
+    mpack::vector_packer p;
+    p << str;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(2+32, buffer.size());
+    EXPECT_EQ(0xd9, buffer[0]);
 
     // unpack
     auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
