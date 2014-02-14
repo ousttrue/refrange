@@ -194,28 +194,19 @@ namespace mpack
         }
     };
 
-    template<typename T>
-        inline packer& operator<<(packer &packer, const T &t)
-        {
-            if(std::numeric_limits<T>::is_integer){
-                return packer.pack_int(t);
-            }
-            else{
-                throw std::exception("not implemented. at " __FUNCTION__);
-            }
-        }
+    inline packer& operator<<(packer &packer, char t) { return packer.pack_int(t); }
+    inline packer& operator<<(packer &packer, short t) { return packer.pack_int(t); }
+    inline packer& operator<<(packer &packer, int t) { return packer.pack_int(t); }
+    inline packer& operator<<(packer &packer, long long t) { return packer.pack_int(t); }
 
-    template<>
-        inline packer& operator<<(packer &packer, const float &t)
-        {
-            return packer.pack_float(t);
-        }
+    inline packer& operator<<(packer &packer, unsigned char t) { return packer.pack_int(t); }
+    inline packer& operator<<(packer &packer, unsigned short t) { return packer.pack_int(t); }
+    inline packer& operator<<(packer &packer, unsigned int t) { return packer.pack_int(t); }
+    inline packer& operator<<(packer &packer, unsigned long long t) { return packer.pack_int(t); }
 
-    template<>
-        inline packer& operator<<(packer &packer, const double &t)
-        {
-            return packer.pack_double(t);
-        }
+    inline packer& operator<<(packer &packer, const float t) { return packer.pack_float(t); }
+    inline packer& operator<<(packer &packer, const double t) { return packer.pack_double(t); }
+
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
@@ -347,24 +338,18 @@ namespace mpack
         }
     };
 
-    template<typename T>
-        unpacker& operator>>(unpacker &unpacker, T &t)
-        {
-            throw std::exception("not implemented. at " __FUNCTION__);
-        }
+    inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack_int(t); }
 
-    template<> inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack_int(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack_int(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack_int(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack_int(t); }
 
-    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack_int(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack_int(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack_int(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack_int(t); }
-
-    template<> inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_float(t); }
-    template<> inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
+    inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_float(t); }
+    inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
