@@ -213,3 +213,28 @@ TEST(MsgpackTest, uint64)
     EXPECT_EQ(value, n);
 }
 
+/// int 8 stores a 8-bit signed integer
+/// +--------+--------+
+/// |  0xd0  |ZZZZZZZZ|
+/// +--------+--------+
+TEST(MsgpackTest, int8)
+{
+    char value=-32;
+
+    // packing
+    mpack::vector_packer p;
+    p << value;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(2, buffer.size());
+    EXPECT_EQ(0xd0, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    char n=0;
+    u >> n;
+    EXPECT_EQ(value, n);
+}
+

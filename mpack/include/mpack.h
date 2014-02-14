@@ -106,6 +106,12 @@ namespace mpack
                     write_byte(static_cast<unsigned char>(v));
                     return *this;
                 }
+                if(n>-0xff){
+                    // int8
+                    write_byte(byte_int8);
+                    write_byte(static_cast<unsigned char>(n));
+                    return *this;
+                }
                 else{
                     throw std::exception("not implemented. at " __FUNCTION__);
                 }
@@ -208,7 +214,13 @@ namespace mpack
             throw std::exception("not implemented. at " __FUNCTION__);
         }
 
-    // int
+    // int8
+    inline packer& operator<<(packer &packer, char &n)
+    {
+        return packer.pack_int(n);
+    }
+
+    // int32
     inline packer& operator<<(packer &packer, int &n)
     {
         return packer.pack_int(n);
@@ -252,6 +264,9 @@ namespace mpack
 
                 case byte_uint64:
                     return read_uint64();
+
+                case byte_int8:
+                    return read_int8();
             }
 
             if(partial_bit_equal<positive_fixint>(head_byte)){
@@ -297,6 +312,15 @@ namespace mpack
             assert(size==8);
             return n;
         }
+
+        unsigned char read_int8()
+        {
+            char byte;
+            size_t size=m_reader((unsigned char*)&byte, 1);
+            assert(size==1);
+            return byte;
+        }
+
     };
 
 
@@ -306,7 +330,14 @@ namespace mpack
             throw std::exception("not implemented. at " __FUNCTION__);
         }
 
-    // int
+    // int8
+    inline unpacker& operator>>(unpacker &unpacker, char &n)
+    {
+        n=unpacker.unpack_int<char>();
+        return unpacker;
+    }
+
+    // int32
     inline unpacker& operator>>(unpacker &unpacker, int &n)
     {
         n=unpacker.unpack_int<int>();
