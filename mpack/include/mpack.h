@@ -137,6 +137,45 @@ namespace mpack
             }
         }
 
+        packer& pack_uint(unsigned int n)
+        {
+            if(n<=0x7f){
+                // 7bit byte
+                write_byte(static_cast<unsigned char>(n));
+                return *this;
+            }
+            else if(n<=0xff){
+                // uint8
+                write_byte(byte_uint8);
+                write_byte(static_cast<unsigned char>(n));
+                return *this;
+            }
+            if(n<=0xffff){
+                // uint16
+                write_byte(byte_uint16);
+                write_uint16(static_cast<unsigned short>(n));
+                return *this;
+            }
+            else{
+                // uint32
+                write_byte(byte_uint32);
+                write_uint32(n);
+                return *this;
+            }
+        }
+
+        packer& pack_uint64(unsigned long long n)
+        {
+            if(n<=0xffffffff){
+                return pack_uint(static_cast<unsigned int>(n));
+            }
+            else{
+                write_byte(byte_uint64);
+                write_uint64(n);
+                return *this;
+            }
+        }
+
     private:
         void write_byte(unsigned char n)
         {
@@ -155,18 +194,48 @@ namespace mpack
             size_t size=m_writer((unsigned char*)&n, 4);
             assert(size==4);
         }
+
+        void write_uint64(unsigned long long n)
+        {
+            size_t size=m_writer((unsigned char*)&n, 8);
+            assert(size==8);
+        }
     };
+
+    template<typename T>
+        packer& operator<<(packer &packer, const T &t)
+        {
+            throw std::exception("not implemented. at " __FUNCTION__);
+        }
+
+    // int
+    inline packer& operator<<(packer &packer, int &n)
+    {
+        return packer.pack_int(n);
+    }
+
+    // uint32
+    inline packer& operator<<(packer &packer, unsigned int &n)
+    {
+        return packer.pack_uint(n);
+    }
+
+    // uint64
+    inline packer& operator<<(packer &packer, unsigned long long &n)
+    {
+        return packer.pack_uint64(n);
+    }
 
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
-
 
     class unpacker
     {
     public:
         reader_t m_reader;
 
-        int unpack_int()
+        template<typename T>
+        T unpack_int()
         {
             unsigned char head_byte=read_byte();
 
@@ -180,6 +249,9 @@ namespace mpack
 
                 case byte_uint32:
                     return read_uint32();
+
+                case byte_uint64:
+                    return read_uint64();
             }
 
             if(partial_bit_equal<positive_fixint>(head_byte)){
@@ -217,11 +289,19 @@ namespace mpack
             assert(size==4);
             return n;
         }
+
+        unsigned long long read_uint64()
+        {
+            unsigned long long n;
+            size_t size=m_reader((unsigned char*)&n, 8);
+            assert(size==8);
+            return n;
+        }
     };
 
 
     template<typename T>
-        unpacker& operator>>(unpacker &unpacker, const T &t)
+        unpacker& operator>>(unpacker &unpacker, T &t)
         {
             throw std::exception("not implemented. at " __FUNCTION__);
         }
@@ -229,7 +309,14 @@ namespace mpack
     // int
     inline unpacker& operator>>(unpacker &unpacker, int &n)
     {
-        n=unpacker.unpack_int();
+        n=unpacker.unpack_int<int>();
+        return unpacker;
+    }
+
+    // uint64
+    inline unpacker& operator>>(unpacker &unpacker, unsigned long long &n)
+    {
+        n=unpacker.unpack_int<unsigned long long>();
         return unpacker;
     }
 

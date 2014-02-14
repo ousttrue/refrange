@@ -147,21 +147,68 @@ TEST(MsgpackTest, uint16)
 /// +--------+--------+--------+--------+--------+
 TEST(MsgpackTest, uint32)
 {
-    int value=65536;
+    {
+        int value=65536;
+
+        // packing
+        mpack::vector_packer p;
+        p.pack_int(value);
+        auto &buffer=p.packed_buffer;
+        ASSERT_FALSE(buffer.empty());
+
+        // check
+        ASSERT_EQ(5, buffer.size());
+        EXPECT_EQ(0xce, buffer[0]);
+
+        // unpack
+        auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+        int n=0;
+        u >> n;
+        EXPECT_EQ(value, n);
+    }
+
+    {
+        unsigned int value=4294967295;
+
+        // packing
+        mpack::vector_packer p;
+        p << value;
+        auto &buffer=p.packed_buffer;
+        ASSERT_FALSE(buffer.empty());
+
+        // check
+        ASSERT_EQ(5, buffer.size());
+        EXPECT_EQ(0xce, buffer[0]);
+
+        // unpack
+        auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+        int n=0;
+        u >> n;
+        EXPECT_EQ(value, n);
+    }
+}
+
+/// uint 64 stores a 64-bit big-endian unsigned integer
+/// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+/// |  0xcf  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|
+/// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+TEST(MsgpackTest, uint64)
+{
+    unsigned long long value=4294967296;
 
     // packing
     mpack::vector_packer p;
-    p.pack_int(value);
+    p << value;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(5, buffer.size());
-    EXPECT_EQ(0xce, buffer[0]);
+    ASSERT_EQ(9, buffer.size());
+    EXPECT_EQ(0xcf, buffer[0]);
 
     // unpack
     auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
-    int n=0;
+    unsigned long long n=0;
     u >> n;
     EXPECT_EQ(value, n);
 }
