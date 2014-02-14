@@ -95,3 +95,26 @@ TEST(MsgpackTest, small_negative_int)
     EXPECT_EQ(-1, n);
 }
 
+/// uint 8 stores a 8-bit unsigned integer
+/// +--------+--------+
+/// |  0xcc  |ZZZZZZZZ|
+/// +--------+--------+
+TEST(MsgpackTest, uint8)
+{
+    // packing
+    mpack::packer p;
+    p.pack_int(128);
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(2, buffer.size());
+    EXPECT_EQ(0xcc, buffer[0]);
+
+    // unpack
+    mpack::reference_unpacker u(&buffer[0], buffer.size());
+    int n=0;
+    u >> n;
+    EXPECT_EQ(128, n);
+}
+

@@ -107,6 +107,11 @@ namespace mpack
                         packed_buffer.push_back(n);
                         return *this;
                     }
+                    if(n<=0xff){
+                        packed_buffer.push_back(Uint8);
+                        packed_buffer.push_back(static_cast<unsigned char>(n));
+                        return *this;
+                    }
                     else{
                         // not implmented
                         throw std::exception();
@@ -146,6 +151,17 @@ namespace mpack
             if(m_p>=m_begin+m_size){
                 // over
                 throw std::exception();
+            }
+
+            switch(*m_p)
+            {
+                case Uint8:
+                    {
+                        ++m_p;
+                        unsigned char n=*m_p++;
+                        return n;
+                    }
+                    break;
             }
 
             if(partial_bit_equal<PositiveFixint>(*m_p)){
