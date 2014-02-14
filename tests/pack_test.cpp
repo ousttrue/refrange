@@ -288,3 +288,28 @@ TEST(MsgpackTest, int32)
     EXPECT_EQ(value, n);
 }
 
+/// int 64 stores a 64-bit big-endian signed integer
+/// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+/// |  0xd3  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|
+/// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+TEST(MsgpackTest, int64)
+{
+    long long value=-4294967296;
+
+    // packing
+    mpack::vector_packer p;
+    p << value;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(9, buffer.size());
+    EXPECT_EQ(0xd3, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    long long n=0;
+    u >> n;
+    EXPECT_EQ(value, n);
+}
+

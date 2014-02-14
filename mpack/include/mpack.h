@@ -121,13 +121,16 @@ namespace mpack
                     return *this;
                 }
                 if(n>-0xffffffff){
-                    // int 32
+                    // int32
                     write_head_byte(byte_int32);
                     write_int(static_cast<int>(n));
                     return *this;
                 }
                 else{
-                    throw std::exception("not implemented. at " __FUNCTION__);
+                    // int64
+                    write_head_byte(byte_int64);
+                    write_int(static_cast<long long>(n));
+                    return *this;
                 }
             }
             else{
