@@ -1,9 +1,14 @@
 #pragma once
 #include <vector>
+#include <functional>
+#include <assert.h>
 
 
 namespace mpack
 {
+    //////////////////////////////////////////////////////////////////////////////
+    // core
+    //////////////////////////////////////////////////////////////////////////////
     struct positive_fixint
     {
         enum bits_t { bits=0x00 };
@@ -71,68 +76,65 @@ namespace mpack
         byte_map32=0xdf,
     };
 
-    class vector_packer
+
+    typedef std::function<size_t(const unsigned char*, size_t)> writer_t;
+
+    class packer
     {
-        public:
-            std::vector<unsigned char> packed_buffer;
+    public:
+        writer_t m_writer;
 
-            vector_packer& pack_nil()
-            {
-                packed_buffer.push_back(0xc0);
-                return *this;
-            }
-
-            vector_packer& pack_bool(bool b)
-            {
-                packed_buffer.push_back(b ? 0xc3 : 0xc2);
-                return *this;
-            }
-
-            vector_packer& pack_int(int n)
-            {
-                if(n<0){
-                    if(n>-0x1f){
-                        // negative fix int
-						int v = 0xe0 + (-n);
-                        packed_buffer.push_back(static_cast<unsigned char>(v));
-                        return *this;
-                    }
-                    else{
-                        // not implmented
-                        throw std::exception();
-                    }
-                }
-                else{
-                    if(n<=0x7f){
-                        packed_buffer.push_back(n);
-                        return *this;
-                    }
-                    if(n<=0xff){
-						packed_buffer.push_back(byte_uint8);
-                        packed_buffer.push_back(static_cast<unsigned char>(n));
-                        return *this;
-                    }
-                    else{
-                        // not implmented
-                        throw std::exception();
-                    }
-                }
-            }
-    };
-
-    template<typename T>
-        vector_packer& operator<<(vector_packer &packer, const T &t)
+        packer& pack_nil()
         {
-            // not implmented
-            throw std::exception();
+            write_byte(0xc0);
+            return *this;
         }
 
-    // int
-    inline vector_packer& operator<<(vector_packer &packer, int n)
-    {
-        packer.packed_buffer.push_back(n);
-        return packer;
+        packer& pack_bool(bool b)
+        {
+            write_byte(b ? 0xc3 : 0xc2);
+            return *this;
+        }
+
+        packer& pack_int(int n)
+        {
+            if(n<0){
+                if(n>-0x1f){
+                    // negative fix int
+                    int v = 0xe0 + (-n);
+                    write_byte(static_cast<unsigned char>(v));
+                    return *this;
+                }
+                else{
+                    // not implmented
+                    throw std::exception();
+                }
+            }
+            else{
+                if(n<=0x7f){
+                    write_byte(static_cast<unsigned char>(n));
+                    return *this;
+                }
+                if(n<=0xff){
+                    write_byte(byte_uint8);
+                    write_byte(static_cast<unsigned char>(n));
+                    return *this;
+                }
+                else{
+                    // not implmented
+                    throw std::exception();
+                }
+            }
+        }
+
+    private:
+        void write_byte(unsigned char byte)
+        {
+            size_t size=m_writer(&byte, 1);
+            assert(size==1);
+        }
     };
+
 
     class reference_unpacker
     {
@@ -146,7 +148,7 @@ namespace mpack
         {
         };
 
-        int get_int()
+        int unpack_int()
         {
             if(m_p>=m_begin+m_size){
                 // over
@@ -189,9 +191,29 @@ namespace mpack
     // int
     inline reference_unpacker& operator>>(reference_unpacker &unpacker, int &n)
     {
-        n=unpacker.get_int();
+        n=unpacker.unpack_int();
         return unpacker;
     }
 
+    //////////////////////////////////////////////////////////////////////////////
+    // utility
+    //////////////////////////////////////////////////////////////////////////////
+    class vector_packer: public packer
+    {
+    public:
+        std::vector<unsigned char> packed_buffer;
+
+        vector_packer()
+        {
+			auto buffer=&packed_buffer;
+            m_writer=[buffer](const unsigned char *p, size_t size)->size_t
+            {
+                for(size_t i=0; i<size; ++i){
+                    buffer->push_back(*p++);
+                }
+                return size;
+            };
+        }
+    };
 };
 
