@@ -313,3 +313,53 @@ TEST(MsgpackTest, int64)
     EXPECT_EQ(value, n);
 }
 
+/// float 32 stores a floating point number in IEEE 754 single precision floating point number format:
+/// +--------+--------+--------+--------+--------+
+/// |  0xca  |XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX
+/// +--------+--------+--------+--------+--------+
+TEST(MsgpackTest, float32)
+{
+    float value=1.5f;
+
+    // packing
+    mpack::vector_packer p;
+    p << value;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(5, buffer.size());
+    EXPECT_EQ(0xca, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    float n=0;
+    u >> n;
+    EXPECT_EQ(value, n);
+}
+
+/// float 64 stores a floating point number in IEEE 754 double precision floating point number format:
+/// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+/// |  0xcb  |YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|
+/// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+TEST(MsgpackTest, float64)
+{
+    double value=1.111111111111111111111111111111111111111111111111;
+
+    // packing
+    mpack::vector_packer p;
+    p << value;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(9, buffer.size());
+    EXPECT_EQ(0xcb, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    double n=0;
+    u >> n;
+    EXPECT_EQ(value, n);
+}
+

@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <limits>
 #include <assert.h>
 
 
@@ -97,7 +98,6 @@ namespace mpack
             return *this;
         }
 
-        // signed
         template<typename T>
         packer& pack_int(T n)
         {
@@ -105,75 +105,89 @@ namespace mpack
                 if(n>-0x1f){
                     // negative fix int
                     auto v = 0xe0 | -static_cast<char>(n);
-                    write_int(static_cast<char>(v));
+                    write_value(static_cast<char>(v));
                     return *this;
                 }
                 if(n>-0xff){
                     // int8
                     write_head_byte(byte_int8);
-                    write_int(static_cast<char>(n));
+                    write_value(static_cast<char>(n));
                     return *this;
                 }
                 if(n>-0xffff){
                     // int16
                     write_head_byte(byte_int16);
-                    write_int(static_cast<short>(n));
+                    write_value(static_cast<short>(n));
                     return *this;
                 }
                 if(n>-0xffffffff){
                     // int32
                     write_head_byte(byte_int32);
-                    write_int(static_cast<int>(n));
+                    write_value(static_cast<int>(n));
                     return *this;
                 }
                 else{
                     // int64
                     write_head_byte(byte_int64);
-                    write_int(static_cast<long long>(n));
+                    write_value(static_cast<long long>(n));
                     return *this;
                 }
             }
             else{
                 if(n<=0x7f){
                     // 7bit byte
-                    write_int(static_cast<unsigned char>(n));
+                    write_value(static_cast<unsigned char>(n));
                     return *this;
                 }
                 else if(n<=0xff){
                     // uint8
                     write_head_byte(byte_uint8);
-                    write_int(static_cast<unsigned char>(n));
+                    write_value(static_cast<unsigned char>(n));
                     return *this;
                 }
                 if(n<=0xffff){
                     // uint16
                     write_head_byte(byte_uint16);
-                    write_int(static_cast<unsigned short>(n));
+                    write_value(static_cast<unsigned short>(n));
                     return *this;
                 }
                 else if(n<=0xffffffff){
                     // uint32
                     write_head_byte(byte_uint32);
-                    write_int(static_cast<unsigned int>(n));
+                    write_value(static_cast<unsigned int>(n));
                     return *this;
                 }
                 else{
                     // uint64
                     write_head_byte(byte_uint64);
-                    write_int(static_cast<unsigned long long>(n));
+                    write_value(static_cast<unsigned long long>(n));
                     return *this;
                 }
             }
         }
 
+        packer& pack_float(float n)
+        {
+            write_head_byte(byte_float32);
+            write_value(n);
+            return *this;
+        }
+
+        packer& pack_double(double n)
+        {
+            write_head_byte(byte_float64);
+            write_value(n);
+            return *this;
+        }
+
     private:
         void write_head_byte(byte_type head_byte)
         {
-            write_int(static_cast<unsigned char>(head_byte));
+            write_value(static_cast<unsigned char>(head_byte));
         }
 
         template<typename T>
-        void write_int(T n)
+        void write_value(T n)
         {
             size_t size=m_writer((unsigned char*)&n, sizeof(T));
             assert(size==sizeof(T));
@@ -181,11 +195,27 @@ namespace mpack
     };
 
     template<typename T>
-        packer& operator<<(packer &packer, const T &t)
+        inline packer& operator<<(packer &packer, const T &t)
         {
-            return packer.pack_int(t);
+            if(std::numeric_limits<T>::is_integer){
+                return packer.pack_int(t);
+            }
+            else{
+                throw std::exception("not implemented. at " __FUNCTION__);
+            }
         }
 
+    template<>
+        inline packer& operator<<(packer &packer, const float &t)
+        {
+            return packer.pack_float(t);
+        }
+
+    template<>
+        inline packer& operator<<(packer &packer, const double &t)
+        {
+            return packer.pack_double(t);
+        }
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
@@ -195,21 +225,43 @@ namespace mpack
         reader_t m_reader;
 
         template<typename T>
+        T unpack_float()
+        {
+            unsigned char head_byte=read_value<unsigned char>();
+
+            switch(head_byte)
+            {
+                case byte_float32:
+                    return read_value<float>();
+
+                case byte_float64:
+                    if(sizeof(T)<8){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        return read_value<double>();
+                    }
+            }
+
+            throw std::exception("not implemented. at " __FUNCTION__);
+        }
+
+        template<typename T>
         T unpack_int()
         {
-            unsigned char head_byte=read_int<unsigned char>();
+            unsigned char head_byte=read_value<unsigned char>();
 
             switch(head_byte)
             {
                 case byte_uint8:
-                    return read_int<unsigned char>();
+                    return read_value<unsigned char>();
 
                 case byte_uint16:
                     if(sizeof(T)<2){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_int<unsigned short>());
+                        return static_cast<T>(read_value<unsigned short>());
                     }
 
                 case byte_uint32:
@@ -217,7 +269,7 @@ namespace mpack
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_int<unsigned int>());
+                        return static_cast<T>(read_value<unsigned int>());
                     }
 
                 case byte_uint64:
@@ -225,18 +277,18 @@ namespace mpack
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_int<unsigned long long>());
+                        return static_cast<T>(read_value<unsigned long long>());
                     }
 
                 case byte_int8:
-                    return static_cast<T>(read_int<char>());
+                    return static_cast<T>(read_value<char>());
 
                 case byte_int16:
                     if(sizeof(T)<2){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_int<short>());
+                        return static_cast<T>(read_value<short>());
                     }
 
                 case byte_int32:
@@ -244,7 +296,7 @@ namespace mpack
                         throw std::exception("range check ?");
                     }
                     else {
-                        return static_cast<T>(read_int<int>());
+                        return static_cast<T>(read_value<int>());
                     }
 
                 case byte_int64:
@@ -252,7 +304,7 @@ namespace mpack
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_int<long long>());
+                        return static_cast<T>(read_value<long long>());
                     }
             }
 
@@ -269,7 +321,7 @@ namespace mpack
 
     private:
         template<typename T>
-        T read_int()
+        T read_value()
         {
             T n;
             size_t size=m_reader((unsigned char*)&n, sizeof(T));
@@ -281,10 +333,28 @@ namespace mpack
     template<typename T>
         unpacker& operator>>(unpacker &unpacker, T &t)
         {
-            t=unpacker.unpack_int<T>();
+            if(std::numeric_limits<T>::is_integer){
+                t=unpacker.unpack_int<T>();
+            }
+            else{
+                throw std::exception("not implemented. at " __FUNCTION__);
+            }
             return unpacker;
         }
 
+    template<>
+        inline unpacker& operator>>(unpacker &unpacker, float &t)
+        {
+            t=unpacker.unpack_float<float>();
+            return unpacker;
+        }
+
+    template<>
+        inline unpacker& operator>>(unpacker &unpacker, double &t)
+        {
+            t=unpacker.unpack_float<double>();
+            return unpacker;
+        }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
