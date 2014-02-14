@@ -103,6 +103,23 @@ namespace mpack
 
 
     //////////////////////////////////////////////////////////////////////////////
+    // map
+    //////////////////////////////////////////////////////////////////////////////
+    struct map_context
+    {
+        size_t size;
+
+        map_context()
+            : size(0)
+        {}
+
+        map_context(size_t _size)
+            : size(_size)
+        {}
+    };
+
+
+    //////////////////////////////////////////////////////////////////////////////
     // packer
     //////////////////////////////////////////////////////////////////////////////
     typedef std::function<size_t(const unsigned char*, size_t)> writer_t;
@@ -276,22 +293,22 @@ namespace mpack
             return *this;
         }
 
-        packer &begin_array(const array_context &a)
+        packer &begin_array(const array_context &c)
         {
-            if(a.size<0x0F){
+            if(c.size<0x0F){
                 // fixarray
-                auto v = fixarray::bits | a.size;
+                auto v = fixarray::bits | c.size;
                 write_value(static_cast<char>(v));
             }
-            else if(a.size<0xFFFF){
+            else if(c.size<0xFFFF){
                 // array16
                 write_head_byte(byte_array16);
-                write_value(static_cast<unsigned short>(a.size));
+                write_value(static_cast<unsigned short>(c.size));
             }
-            else if(a.size<0xFFFFFFFF){
+            else if(c.size<0xFFFFFFFF){
                 // array32
                 write_head_byte(byte_array32);
-                write_value(static_cast<unsigned int>(a.size));
+                write_value(static_cast<unsigned int>(c.size));
             }
             else{
                 throw std::out_of_range(__FUNCTION__);
@@ -299,6 +316,31 @@ namespace mpack
 
             return *this;
         }
+
+        packer &begin_map(const map_context &c)
+        {
+            if(c.size<0x0F){
+                // fixmap
+                auto v = fixmap::bits | c.size;
+                write_value(static_cast<char>(v));
+            }
+            else if(c.size<0xFFFF){
+                // map16
+                write_head_byte(byte_map16);
+                write_value(static_cast<unsigned short>(c.size));
+            }
+            else if(c.size<0xFFFFFFFF){
+                // map32
+                write_head_byte(byte_map32);
+                write_value(static_cast<unsigned int>(c.size));
+            }
+            else{
+                throw std::out_of_range(__FUNCTION__);
+            }
+
+            return *this;
+        }
+
 
     private:
         void write_head_byte(byte_type head_byte)
@@ -344,6 +386,9 @@ namespace mpack
 
     // array
     inline packer& operator<<(packer &packer, const array_context &t){ return packer.begin_array(t); }
+
+    // map
+    inline packer& operator<<(packer &packer, const map_context &t){ return packer.begin_map(t); }
 
 
     //////////////////////////////////////////////////////////////////////////////
@@ -590,22 +635,59 @@ namespace mpack
             return partial_bit_equal<fixarray>(head_byte);
         }
 
-        unpacker &unpack_array(array_context &a)
+        unpacker &unpack_array(array_context &c)
         {
             auto head_byte=read_value<unsigned char>();
             switch(head_byte)
             {
                 case byte_array16:
-                    a.size=read_value<unsigned short>();
+                    c.size=read_value<unsigned short>();
                     break;
 
                 case byte_array32:
-                    a.size=read_value<unsigned int>();
+                    c.size=read_value<unsigned int>();
                     break;
 
                 default:
                     if(partial_bit_equal<fixarray>(head_byte)){
-                        a.size=extract_head_byte<fixarray>(head_byte);
+                        c.size=extract_head_byte<fixarray>(head_byte);
+                    }
+                    else{
+						throw std::invalid_argument(__FUNCTION__);
+                    }
+            }
+
+            return *this;
+        }
+
+        bool is_map()
+        {
+            auto head_byte=peek_byte();
+            switch(head_byte)
+            {
+                case byte_map16:
+                case byte_map32:
+                    return true;
+            }
+            return partial_bit_equal<fixmap>(head_byte);
+        }
+
+        unpacker &unpack_map(map_context &c)
+        {
+            auto head_byte=read_value<unsigned char>();
+            switch(head_byte)
+            {
+                case byte_map16:
+                    c.size=read_value<unsigned short>();
+                    break;
+
+                case byte_map32:
+                    c.size=read_value<unsigned int>();
+                    break;
+
+                default:
+                    if(partial_bit_equal<fixmap>(head_byte)){
+                        c.size=extract_head_byte<fixmap>(head_byte);
                     }
                     else{
 						throw std::invalid_argument(__FUNCTION__);
@@ -683,6 +765,9 @@ namespace mpack
 
     // array
     inline unpacker& operator>>(unpacker &unpacker, array_context &t){ return unpacker.unpack_array(t); }
+
+    // map
+    inline unpacker& operator>>(unpacker &unpacker, map_context &t){ return unpacker.unpack_map(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility

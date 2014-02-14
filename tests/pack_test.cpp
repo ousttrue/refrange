@@ -681,3 +681,84 @@ TEST(MsgpackTest, array32)
     }
 }
 
+/// fixmap stores a map whose length is upto 15 elements
+/// +--------+~~~~~~~~~~~~~~~~~+
+/// |1000XXXX|   N*2 objects   |
+/// +--------+~~~~~~~~~~~~~~~~~+
+TEST(MsgpackTest, fixmap)
+{
+    // packing
+    mpack::vector_packer p;
+    p << mpack::map_context(3) 
+        << "key1" << 0
+        << "key2" << 1
+        << "key3" << 2
+		;
+
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixmap>(buffer[0]));
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    EXPECT_TRUE(u.is_map());
+
+    auto c=mpack::map_context();
+    u >> c;
+    EXPECT_EQ(3, c.size);
+
+    for(int i=0; i<c.size; ++i){
+        std::string key;
+        int value;
+        u >> key >> value;
+        std::stringstream ss;
+        ss << "key" << (i+1);
+        EXPECT_EQ(ss.str(), key);
+        EXPECT_EQ(i, value);
+    }
+}
+
+/// map 16 stores a map whose length is upto (2^16)-1 elements
+/// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
+/// |  0xde  |YYYYYYYY|YYYYYYYY|   N*2 objects   |
+/// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
+TEST(MsgpackTest, map16)
+{
+    // packing
+    mpack::vector_packer p;
+    p << mpack::map_context(17) 
+        << "key1" << 0 << "key2" << 1 << "key3" << 2 << "key4" << 3
+        << "key5" << 4 << "key6" << 5 << "key7" << 6 << "key8" << 7
+        << "key9" << 8 << "key10" << 9 << "key11" << 10 << "key12" << 11
+        << "key13" << 12 << "key14" << 13 << "key15" << 14 << "key16" << 15
+        << "key17" << 16
+		;
+
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    EXPECT_EQ(0xde, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    EXPECT_TRUE(u.is_map());
+
+    // map
+    auto c=mpack::map_context();
+    u >> c ;
+    EXPECT_EQ(17, c.size);
+
+    for(int i=0; i<c.size; ++i){
+        std::string key;
+        int value;
+        u >> key >> value;
+        std::stringstream ss;
+        ss << "key" << (i+1);
+        EXPECT_EQ(ss.str(), key);
+        EXPECT_EQ(i, value);
+    }
+}
+
