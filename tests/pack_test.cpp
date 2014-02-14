@@ -118,3 +118,26 @@ TEST(MsgpackTest, uint8)
     EXPECT_EQ(128, n);
 }
 
+/// uint 16 stores a 16-bit big-endian unsigned integer
+/// +--------+--------+--------+
+/// |  0xcd  |ZZZZZZZZ|ZZZZZZZZ|
+/// +--------+--------+--------+
+TEST(MsgpackTest, uint16)
+{
+    // packing
+    mpack::vector_packer p;
+    p.pack_int(256);
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(3, buffer.size());
+    EXPECT_EQ(0xcd, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    int n=0;
+    u >> n;
+    EXPECT_EQ(256, n);
+}
+

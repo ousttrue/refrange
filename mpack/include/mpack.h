@@ -107,8 +107,7 @@ namespace mpack
                     return *this;
                 }
                 else{
-                    // not implmented
-                    throw std::exception();
+                    throw std::exception("not implemented. at " __FUNCTION__);
                 }
             }
             else{
@@ -116,23 +115,33 @@ namespace mpack
                     write_byte(static_cast<unsigned char>(n));
                     return *this;
                 }
-                if(n<=0xff){
+                else if(n<=0xff){
                     write_byte(byte_uint8);
                     write_byte(static_cast<unsigned char>(n));
                     return *this;
                 }
+                if(n<=0xffff){
+                    write_byte(byte_uint16);
+                    write_uint16(static_cast<unsigned short>(n));
+                    return *this;
+                }
                 else{
-                    // not implmented
-                    throw std::exception();
+                    throw std::exception("not implemented. at " __FUNCTION__);
                 }
             }
         }
 
     private:
-        void write_byte(unsigned char byte)
+        void write_byte(unsigned char n)
         {
-            size_t size=m_writer(&byte, 1);
+            size_t size=m_writer(&n, 1);
             assert(size==1);
+        }
+
+        void write_uint16(unsigned short n)
+        {
+            size_t size=m_writer((unsigned char*)&n, 2);
+            assert(size==2);
         }
     };
 
@@ -152,10 +161,10 @@ namespace mpack
             switch(head_byte)
             {
                 case byte_uint8:
-                    {
-                        return read_byte();
-                    }
-                    break;
+                    return read_byte();
+
+                case byte_uint16:
+                    return read_uint16();
             }
 
             if(partial_bit_equal<positive_fixint>(head_byte)){
@@ -165,8 +174,7 @@ namespace mpack
                 return -static_cast<int>(head_byte & ~negative_fixint::mask);
             }
             else{
-                // not implmented
-                throw std::exception();
+                throw std::exception("not implemented. at " __FUNCTION__);
             }
         }
 
@@ -178,14 +186,21 @@ namespace mpack
             assert(size==1);
             return byte;
         }
+
+        unsigned short read_uint16()
+        {
+            unsigned short n;
+            size_t size=m_reader((unsigned char*)&n, 2);
+            assert(size==2);
+            return n;
+        }
     };
 
 
     template<typename T>
         unpacker& operator>>(unpacker &unpacker, const T &t)
         {
-            // not implmented
-            throw std::exception();
+            throw std::exception("not implemented. at " __FUNCTION__);
         }
 
     // int
