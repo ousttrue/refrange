@@ -57,7 +57,7 @@ TEST(MsgpackTest, small_int)
 {
     // packing
     mpack::vector_packer p;
-    p.pack_int(1);
+    p << 1;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
@@ -80,7 +80,7 @@ TEST(MsgpackTest, small_negative_int)
 {
     // packing
     mpack::vector_packer p;
-    p.pack_int(-1);
+    p << -1;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
@@ -103,7 +103,7 @@ TEST(MsgpackTest, uint8)
 {
     // packing
     mpack::vector_packer p;
-    p.pack_int(128);
+    p << 128;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
@@ -126,7 +126,7 @@ TEST(MsgpackTest, uint16)
 {
     // packing
     mpack::vector_packer p;
-    p.pack_int(256);
+    p << 256;
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
@@ -152,7 +152,7 @@ TEST(MsgpackTest, uint32)
 
         // packing
         mpack::vector_packer p;
-        p.pack_int(value);
+        p << value;
         auto &buffer=p.packed_buffer;
         ASSERT_FALSE(buffer.empty());
 

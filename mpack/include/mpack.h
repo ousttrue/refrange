@@ -87,29 +87,31 @@ namespace mpack
 
         packer& pack_nil()
         {
-            write_byte(0xc0);
+            write_int(static_cast<unsigned char>(0xc0));
             return *this;
         }
 
         packer& pack_bool(bool b)
         {
-            write_byte(b ? 0xc3 : 0xc2);
+            write_int(static_cast<unsigned char>(b ? 0xc3 : 0xc2));
             return *this;
         }
 
-        packer& pack_int(int n)
+        // signed
+        template<typename T>
+        packer& pack_int(T n)
         {
             if(n<0){
                 if(n>-0x1f){
                     // negative fix int
-                    int v = 0xe0 + (-n);
-                    write_byte(static_cast<unsigned char>(v));
+                    auto v = 0xe0 | -static_cast<char>(n);
+                    write_int(static_cast<char>(v));
                     return *this;
                 }
                 if(n>-0xff){
                     // int8
-                    write_byte(byte_int8);
-                    write_byte(static_cast<unsigned char>(n));
+                    write_int(static_cast<unsigned char>(byte_int8));
+                    write_int(static_cast<char>(n));
                     return *this;
                 }
                 else{
@@ -119,124 +121,50 @@ namespace mpack
             else{
                 if(n<=0x7f){
                     // 7bit byte
-                    write_byte(static_cast<unsigned char>(n));
+                    write_int(static_cast<unsigned char>(n));
                     return *this;
                 }
                 else if(n<=0xff){
                     // uint8
-                    write_byte(byte_uint8);
-                    write_byte(static_cast<unsigned char>(n));
+                    write_int(static_cast<unsigned char>(byte_uint8));
+                    write_int(static_cast<unsigned char>(n));
                     return *this;
                 }
                 if(n<=0xffff){
                     // uint16
-                    write_byte(byte_uint16);
-                    write_uint16(static_cast<unsigned short>(n));
+                    write_int(static_cast<unsigned char>(byte_uint16));
+                    write_int(static_cast<unsigned short>(n));
+                    return *this;
+                }
+                else if(n<=0xffffffff){
+                    // uint32
+                    write_int(static_cast<unsigned char>(byte_uint32));
+                    write_int(static_cast<unsigned int>(n));
                     return *this;
                 }
                 else{
-                    // uint32
-                    write_byte(byte_uint32);
-                    write_uint32(static_cast<unsigned int>(n));
+                    // uint64
+                    write_int(static_cast<unsigned char>(byte_uint64));
+                    write_int(static_cast<unsigned long long>(n));
                     return *this;
                 }
-            }
-        }
-
-        packer& pack_uint(unsigned int n)
-        {
-            if(n<=0x7f){
-                // 7bit byte
-                write_byte(static_cast<unsigned char>(n));
-                return *this;
-            }
-            else if(n<=0xff){
-                // uint8
-                write_byte(byte_uint8);
-                write_byte(static_cast<unsigned char>(n));
-                return *this;
-            }
-            if(n<=0xffff){
-                // uint16
-                write_byte(byte_uint16);
-                write_uint16(static_cast<unsigned short>(n));
-                return *this;
-            }
-            else{
-                // uint32
-                write_byte(byte_uint32);
-                write_uint32(n);
-                return *this;
-            }
-        }
-
-        packer& pack_uint64(unsigned long long n)
-        {
-            if(n<=0xffffffff){
-                return pack_uint(static_cast<unsigned int>(n));
-            }
-            else{
-                write_byte(byte_uint64);
-                write_uint64(n);
-                return *this;
             }
         }
 
     private:
-        void write_byte(unsigned char n)
+        template<typename T>
+        void write_int(T n)
         {
-            size_t size=m_writer(&n, 1);
-            assert(size==1);
-        }
-
-        void write_uint16(unsigned short n)
-        {
-            size_t size=m_writer((unsigned char*)&n, 2);
-            assert(size==2);
-        }
-
-        void write_uint32(unsigned int n)
-        {
-            size_t size=m_writer((unsigned char*)&n, 4);
-            assert(size==4);
-        }
-
-        void write_uint64(unsigned long long n)
-        {
-            size_t size=m_writer((unsigned char*)&n, 8);
-            assert(size==8);
+            size_t size=m_writer((unsigned char*)&n, sizeof(T));
+            assert(size==sizeof(T));
         }
     };
 
     template<typename T>
         packer& operator<<(packer &packer, const T &t)
         {
-            throw std::exception("not implemented. at " __FUNCTION__);
+            return packer.pack_int(t);
         }
-
-    // int8
-    inline packer& operator<<(packer &packer, char &n)
-    {
-        return packer.pack_int(n);
-    }
-
-    // int32
-    inline packer& operator<<(packer &packer, int &n)
-    {
-        return packer.pack_int(n);
-    }
-
-    // uint32
-    inline packer& operator<<(packer &packer, unsigned int &n)
-    {
-        return packer.pack_uint(n);
-    }
-
-    // uint64
-    inline packer& operator<<(packer &packer, unsigned long long &n)
-    {
-        return packer.pack_uint64(n);
-    }
 
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
@@ -249,24 +177,24 @@ namespace mpack
         template<typename T>
         T unpack_int()
         {
-            unsigned char head_byte=read_uint8();
+            unsigned char head_byte=read_int<unsigned char>();
 
             switch(head_byte)
             {
                 case byte_uint8:
-                    return read_uint8();
+                    return static_cast<T>(read_int<unsigned char>());
 
                 case byte_uint16:
-                    return read_uint16();
+                    return static_cast<T>(read_int<unsigned short>());
 
                 case byte_uint32:
-                    return read_uint32();
+                    return static_cast<T>(read_int<unsigned int>());
 
                 case byte_uint64:
-                    return read_uint64();
+                    return static_cast<T>(read_int<unsigned long long>());
 
                 case byte_int8:
-                    return read_int8();
+                    return static_cast<T>(read_int<char>());
             }
 
             if(partial_bit_equal<positive_fixint>(head_byte)){
@@ -281,75 +209,22 @@ namespace mpack
         }
 
     private:
-        unsigned char read_uint8()
+        template<typename T>
+        T read_int()
         {
-            unsigned char byte;
-            size_t size=m_reader(&byte, 1);
-            assert(size==1);
-            return byte;
-        }
-
-        unsigned short read_uint16()
-        {
-            unsigned short n;
-            size_t size=m_reader((unsigned char*)&n, 2);
-            assert(size==2);
+            T n;
+            size_t size=m_reader((unsigned char*)&n, sizeof(T));
+            assert(size==sizeof(T));
             return n;
         }
-
-        unsigned int read_uint32()
-        {
-            unsigned int n;
-            size_t size=m_reader((unsigned char*)&n, 4);
-            assert(size==4);
-            return n;
-        }
-
-        unsigned long long read_uint64()
-        {
-            unsigned long long n;
-            size_t size=m_reader((unsigned char*)&n, 8);
-            assert(size==8);
-            return n;
-        }
-
-        unsigned char read_int8()
-        {
-            char byte;
-            size_t size=m_reader((unsigned char*)&byte, 1);
-            assert(size==1);
-            return byte;
-        }
-
     };
-
 
     template<typename T>
         unpacker& operator>>(unpacker &unpacker, T &t)
         {
-            throw std::exception("not implemented. at " __FUNCTION__);
+            t=unpacker.unpack_int<T>();
+            return unpacker;
         }
-
-    // int8
-    inline unpacker& operator>>(unpacker &unpacker, char &n)
-    {
-        n=unpacker.unpack_int<char>();
-        return unpacker;
-    }
-
-    // int32
-    inline unpacker& operator>>(unpacker &unpacker, int &n)
-    {
-        n=unpacker.unpack_int<int>();
-        return unpacker;
-    }
-
-    // uint64
-    inline unpacker& operator>>(unpacker &unpacker, unsigned long long &n)
-    {
-        n=unpacker.unpack_int<unsigned long long>();
-        return unpacker;
-    }
 
 
     //////////////////////////////////////////////////////////////////////////////
