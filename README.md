@@ -13,3 +13,7 @@ Msgpackを自分用に再実装する
 * シンプル実装を心がける
 * Test Driven
 
+ToDo
+----
+* packer エラー型
+* unpacker エラー型(eof, unpack先のサイズ不足)

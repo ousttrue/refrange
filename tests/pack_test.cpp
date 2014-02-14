@@ -238,3 +238,29 @@ TEST(MsgpackTest, int8)
     EXPECT_EQ(value, n);
 }
 
+/// int 16 stores a 16-bit big-endian signed integer
+/// +--------+--------+--------+
+/// |  0xd1  |ZZZZZZZZ|ZZZZZZZZ|
+/// +--------+--------+--------+
+TEST(MsgpackTest, int16)
+{
+    int value=-256;
+
+    // packing
+    mpack::vector_packer p;
+    p << value;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(3, buffer.size());
+    EXPECT_EQ(0xd1, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    int n=0;
+    u >> n;
+    EXPECT_EQ(value, n);
+}
+
+

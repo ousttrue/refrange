@@ -87,13 +87,13 @@ namespace mpack
 
         packer& pack_nil()
         {
-            write_int(static_cast<unsigned char>(0xc0));
+            write_head_byte(byte_nil);
             return *this;
         }
 
         packer& pack_bool(bool b)
         {
-            write_int(static_cast<unsigned char>(b ? 0xc3 : 0xc2));
+            write_head_byte(b ? byte_true : byte_false);
             return *this;
         }
 
@@ -110,8 +110,14 @@ namespace mpack
                 }
                 if(n>-0xff){
                     // int8
-                    write_int(static_cast<unsigned char>(byte_int8));
+                    write_head_byte(byte_int8);
                     write_int(static_cast<char>(n));
+                    return *this;
+                }
+                if(n>-0xffff){
+                    // int16
+                    write_head_byte(byte_int16);
+                    write_int(static_cast<short>(n));
                     return *this;
                 }
                 else{
@@ -126,25 +132,25 @@ namespace mpack
                 }
                 else if(n<=0xff){
                     // uint8
-                    write_int(static_cast<unsigned char>(byte_uint8));
+                    write_head_byte(byte_uint8);
                     write_int(static_cast<unsigned char>(n));
                     return *this;
                 }
                 if(n<=0xffff){
                     // uint16
-                    write_int(static_cast<unsigned char>(byte_uint16));
+                    write_head_byte(byte_uint16);
                     write_int(static_cast<unsigned short>(n));
                     return *this;
                 }
                 else if(n<=0xffffffff){
                     // uint32
-                    write_int(static_cast<unsigned char>(byte_uint32));
+                    write_head_byte(byte_uint32);
                     write_int(static_cast<unsigned int>(n));
                     return *this;
                 }
                 else{
                     // uint64
-                    write_int(static_cast<unsigned char>(byte_uint64));
+                    write_head_byte(byte_uint64);
                     write_int(static_cast<unsigned long long>(n));
                     return *this;
                 }
@@ -152,6 +158,11 @@ namespace mpack
         }
 
     private:
+        void write_head_byte(byte_type head_byte)
+        {
+            write_int(static_cast<unsigned char>(head_byte));
+        }
+
         template<typename T>
         void write_int(T n)
         {
@@ -182,26 +193,65 @@ namespace mpack
             switch(head_byte)
             {
                 case byte_uint8:
-                    return static_cast<T>(read_int<unsigned char>());
+                    return read_int<unsigned char>();
 
                 case byte_uint16:
-                    return static_cast<T>(read_int<unsigned short>());
+                    if(sizeof(T)<2){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        return static_cast<T>(read_int<unsigned short>());
+                    }
 
                 case byte_uint32:
-                    return static_cast<T>(read_int<unsigned int>());
+                    if(sizeof(T)<4){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        return static_cast<T>(read_int<unsigned int>());
+                    }
 
                 case byte_uint64:
-                    return static_cast<T>(read_int<unsigned long long>());
+                    if(sizeof(T)<8){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        return static_cast<T>(read_int<unsigned long long>());
+                    }
 
                 case byte_int8:
                     return static_cast<T>(read_int<char>());
+
+                case byte_int16:
+                    if(sizeof(T)<2){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        return static_cast<T>(read_int<short>());
+                    }
+
+                case byte_int32:
+                    if(sizeof(T)<4){
+                        throw std::exception("range check ?");
+                    }
+                    else {
+                        return static_cast<T>(read_int<int>());
+                    }
+
+                case byte_int64:
+                    if(sizeof(T)<8){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        return static_cast<T>(read_int<long long>());
+                    }
             }
 
             if(partial_bit_equal<positive_fixint>(head_byte)){
-                return static_cast<int>(head_byte);
+                return static_cast<char>(head_byte);
             }
             else if(partial_bit_equal<negative_fixint>(head_byte)){
-                return -static_cast<int>(head_byte & ~negative_fixint::mask);
+                return -static_cast<char>(head_byte & ~negative_fixint::mask);
             }
             else{
                 throw std::exception("not implemented. at " __FUNCTION__);
