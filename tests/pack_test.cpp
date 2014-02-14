@@ -567,3 +567,37 @@ TEST(MsgpackTest, bin32)
     EXPECT_EQ(buf, out);
 }
 
+/// fixarray stores an array whose length is upto 15 elements:
+/// +--------+~~~~~~~~~~~~~~~~~+
+/// |1001XXXX|    N objects    |
+/// +--------+~~~~~~~~~~~~~~~~~+
+TEST(MsgpackTest, fixarray)
+{
+    // packing
+    mpack::vector_packer p;
+    p << mpack::array_context(3) 
+        << 1 << "str" << true
+		;
+
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_TRUE(mpack::partial_bit_equal<mpack::fixarray>(buffer[0]));
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    EXPECT_TRUE(u.is_array());
+
+    auto c=mpack::array_context();
+    int n;
+    std::string str;
+    bool b;
+    u >> c >> n >> str >> b;
+
+    EXPECT_EQ(3, c.size);
+    EXPECT_EQ(1, n);
+    EXPECT_EQ("str", str);
+    EXPECT_EQ(true, b);
+}
+

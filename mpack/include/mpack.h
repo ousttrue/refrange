@@ -85,6 +85,26 @@ namespace mpack
     };
 
 
+    //////////////////////////////////////////////////////////////////////////////
+    // array
+    //////////////////////////////////////////////////////////////////////////////
+    struct array_context
+    {
+        size_t size;
+
+        array_context()
+            : size(0)
+        {}
+
+        array_context(size_t _size)
+            : size(_size)
+        {}
+    };
+
+
+    //////////////////////////////////////////////////////////////////////////////
+    // packer
+    //////////////////////////////////////////////////////////////////////////////
     typedef std::function<size_t(const unsigned char*, size_t)> writer_t;
 
     class packer
@@ -256,6 +276,28 @@ namespace mpack
             return *this;
         }
 
+        packer &begin_array(const array_context &a)
+        {
+            if(a.size<0x0F){
+                // fixarray
+                auto v = fixarray::bits | a.size;
+                write_value(static_cast<char>(v));
+            }
+            else if(a.size<0xFFFF){
+                // array16
+                write_head_byte(byte_array16);
+            }
+            else if(a.size<0xFFFFFFFF){
+                // array32
+                write_head_byte(byte_array32);
+            }
+            else{
+                throw std::out_of_range(__FUNCTION__);
+            }
+
+            return *this;
+        }
+
     private:
         void write_head_byte(byte_type head_byte)
         {
@@ -270,32 +312,61 @@ namespace mpack
         }
     };
 
+    // bool
+    inline packer& operator<<(packer &packer, bool t) { return packer.pack_bool(t); }
+
+    // signed
     inline packer& operator<<(packer &packer, char t) { return packer.pack_int(t); }
     inline packer& operator<<(packer &packer, short t) { return packer.pack_int(t); }
     inline packer& operator<<(packer &packer, int t) { return packer.pack_int(t); }
     inline packer& operator<<(packer &packer, long long t) { return packer.pack_int(t); }
 
+    // unsigned
     inline packer& operator<<(packer &packer, unsigned char t) { return packer.pack_int(t); }
     inline packer& operator<<(packer &packer, unsigned short t) { return packer.pack_int(t); }
     inline packer& operator<<(packer &packer, unsigned int t) { return packer.pack_int(t); }
     inline packer& operator<<(packer &packer, unsigned long long t) { return packer.pack_int(t); }
 
+    // float
     inline packer& operator<<(packer &packer, const float t) { return packer.pack_float(t); }
     inline packer& operator<<(packer &packer, const double t) { return packer.pack_double(t); }
 
+    // str
     inline packer& operator<<(packer &packer, const char *t) { return packer.pack_str(t); }
     inline packer& operator<<(packer &packer, const std::string &t){ return packer.pack_str(t.c_str()); }
 
+    // bin
     inline packer& operator<<(packer &packer, const std::vector<unsigned char> &t){ 
         if(!t.empty()){ packer.pack_bin(&t[0], t.size()); }; return packer;
     }
 
+    // array
+    inline packer& operator<<(packer &packer, const array_context &t){ return packer.begin_array(t); }
+
+
+    //////////////////////////////////////////////////////////////////////////////
+    // unpacker
+    //////////////////////////////////////////////////////////////////////////////
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
     class unpacker
     {
     public:
         reader_t m_reader;
+        // 0-255 (-1 is invalid)
+        int m_peek_byte;
+
+        unpacker()
+            : m_peek_byte(-1)
+        {
+        }
+
+        unpacker& unpack_bool(bool &t)
+        {
+            unsigned char head_byte=read_value<unsigned char>();
+            t=(head_byte==byte_true);
+            return *this;
+        }
 
         template<typename T>
         unpacker& unpack_float(T &t)
@@ -505,6 +576,42 @@ namespace mpack
             return *this;
         }
 
+        bool is_array()
+        {
+            auto head_byte=peek_byte();
+            switch(head_byte)
+            {
+                case byte_array16:
+                case byte_array32:
+                    return true;
+            }
+            return partial_bit_equal<fixarray>(head_byte);
+        }
+
+        unpacker &unpack_array(array_context &a)
+        {
+            auto head_byte=read_value<unsigned char>();
+            switch(head_byte)
+            {
+                case byte_array16:
+                    a.size=read_value<unsigned short>();
+                    break;
+
+                case byte_array32:
+                    a.size=read_value<unsigned int>();
+                    break;
+
+                default:
+                    if(partial_bit_equal<fixarray>(head_byte)){
+                        a.size=extract_head_byte<fixarray>(head_byte);
+                    }
+                    else{
+						throw std::invalid_argument(__FUNCTION__);
+                    }
+            }
+
+            return *this;
+        }
 
     private:
         template<typename T>
@@ -514,30 +621,66 @@ namespace mpack
             size_t size=read((unsigned char*)&n, sizeof(T));
             return n;
         }
+
+        unsigned char peek_byte()
+        {
+            if(m_peek_byte==-1){
+                unsigned char byte;
+                auto size=read(&byte, 1);
+                assert(size==1);
+                m_peek_byte=byte;
+            }
+            return m_peek_byte;
+        }
             
         size_t read(unsigned char *p, size_t len)
         {
-            size_t size=m_reader(p, len);
-            assert(size==len);
-            return size;
+            if(m_peek_byte==-1){
+                size_t size=m_reader(p, len);
+                assert(size==len);
+                return size;
+            }
+            else{
+                {
+                    // first peek byte
+                    *p=static_cast<unsigned char>(m_peek_byte);
+                    m_peek_byte=-1;
+                }
+                size_t size=m_reader(p+1, len-1);
+                ++size;
+                assert(size==len);
+                return size;
+            }
         }
     };
 
+    // bool
+    inline unpacker& operator>>(unpacker &unpacker, bool &t) { return unpacker.unpack_bool(t); }
+
+    // signed
     inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack_int(t); }
     inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack_int(t); }
     inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack_int(t); }
     inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack_int(t); }
 
+    // unsigned
     inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack_int(t); }
     inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack_int(t); }
     inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack_int(t); }
     inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack_int(t); }
 
+    // float
     inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_float(t); }
     inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
 
+    // str
     inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack_string(t); }
+
+    // bin
     inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack_bin(t); }
+
+    // array
+    inline unpacker& operator>>(unpacker &unpacker, array_context &t){ return unpacker.unpack_array(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
