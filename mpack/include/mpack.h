@@ -286,10 +286,12 @@ namespace mpack
             else if(a.size<0xFFFF){
                 // array16
                 write_head_byte(byte_array16);
+                write_value(static_cast<unsigned short>(a.size));
             }
             else if(a.size<0xFFFFFFFF){
                 // array32
                 write_head_byte(byte_array32);
+                write_value(static_cast<unsigned int>(a.size));
             }
             else{
                 throw std::out_of_range(__FUNCTION__);

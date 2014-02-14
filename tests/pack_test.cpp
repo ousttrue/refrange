@@ -601,3 +601,47 @@ TEST(MsgpackTest, fixarray)
     EXPECT_EQ(true, b);
 }
 
+/// array 16 stores an array whose length is upto (2^16)-1 elements:
+/// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
+/// |  0xdc  |YYYYYYYY|YYYYYYYY|    N objects    |
+/// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
+TEST(MsgpackTest, array16)
+{
+    // packing
+    mpack::vector_packer p;
+    p << mpack::array_context(16) 
+        << 1 << "str1" << true << 1.5f
+        << 2 << "str2" << false << 1.6f
+        << 3 << "str3" << true << 1.7
+        << 4 << "str4" << false << 1.8
+		;
+
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    EXPECT_EQ(0xdc, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    EXPECT_TRUE(u.is_array());
+
+    // array
+    auto c=mpack::array_context();
+    u >> c ;
+    EXPECT_EQ(16, c.size);
+
+    {
+        int n;
+        std::string str;
+        bool b;
+        double f;
+        u >> n >> str >> b >> f
+            ;
+        EXPECT_EQ(1, n);
+        EXPECT_EQ("str1", str);
+        EXPECT_EQ(true, b);
+        EXPECT_EQ(1.5f, f);
+    }
+}
+
