@@ -225,98 +225,115 @@ namespace mpack
         reader_t m_reader;
 
         template<typename T>
-        T unpack_float()
+        unpacker& unpack_float(T &t)
         {
             unsigned char head_byte=read_value<unsigned char>();
 
             switch(head_byte)
             {
                 case byte_float32:
-                    return read_value<float>();
+                    t=read_value<float>();
+                    break;
 
                 case byte_float64:
                     if(sizeof(T)<8){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return read_value<double>();
+                        t=read_value<double>();
                     }
+                    break;
+
+                default:
+                    throw std::exception("not implemented. at " __FUNCTION__);
             }
 
-            throw std::exception("not implemented. at " __FUNCTION__);
+            return *this;
         }
 
         template<typename T>
-        T unpack_int()
+        unpacker &unpack_int(T &t)
         {
             unsigned char head_byte=read_value<unsigned char>();
 
             switch(head_byte)
             {
                 case byte_uint8:
-                    return read_value<unsigned char>();
+                    t=read_value<unsigned char>();
+                    break;
 
                 case byte_uint16:
                     if(sizeof(T)<2){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_value<unsigned short>());
+                        t=static_cast<T>(read_value<unsigned short>());
                     }
+                    break;
 
                 case byte_uint32:
                     if(sizeof(T)<4){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_value<unsigned int>());
+                        t=static_cast<T>(read_value<unsigned int>());
                     }
+                    break;
 
                 case byte_uint64:
                     if(sizeof(T)<8){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_value<unsigned long long>());
+                        t=static_cast<T>(read_value<unsigned long long>());
                     }
+                    break;
 
                 case byte_int8:
-                    return static_cast<T>(read_value<char>());
+                    t=static_cast<T>(read_value<char>());
+                    break;
 
                 case byte_int16:
                     if(sizeof(T)<2){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_value<short>());
+                        t=static_cast<T>(read_value<short>());
                     }
+                    break;
 
                 case byte_int32:
                     if(sizeof(T)<4){
                         throw std::exception("range check ?");
                     }
                     else {
-                        return static_cast<T>(read_value<int>());
+                        t=static_cast<T>(read_value<int>());
                     }
+                    break;
 
                 case byte_int64:
                     if(sizeof(T)<8){
                         throw std::exception("range check ?");
                     }
                     else{
-                        return static_cast<T>(read_value<long long>());
+                        t=static_cast<T>(read_value<long long>());
                     }
+                    break;
+
+                default:
+                    if(partial_bit_equal<positive_fixint>(head_byte)){
+                        t=static_cast<char>(head_byte);
+                    }
+                    else if(partial_bit_equal<negative_fixint>(head_byte)){
+                        t=-static_cast<char>(head_byte & ~negative_fixint::mask);
+                    }
+                    else{
+                        throw std::exception("not implemented. at " __FUNCTION__);
+                    }
+                    break;
             }
 
-            if(partial_bit_equal<positive_fixint>(head_byte)){
-                return static_cast<char>(head_byte);
-            }
-            else if(partial_bit_equal<negative_fixint>(head_byte)){
-                return -static_cast<char>(head_byte & ~negative_fixint::mask);
-            }
-            else{
-                throw std::exception("not implemented. at " __FUNCTION__);
-            }
+            return *this;
         }
 
     private:
@@ -333,28 +350,21 @@ namespace mpack
     template<typename T>
         unpacker& operator>>(unpacker &unpacker, T &t)
         {
-            if(std::numeric_limits<T>::is_integer){
-                t=unpacker.unpack_int<T>();
-            }
-            else{
-                throw std::exception("not implemented. at " __FUNCTION__);
-            }
-            return unpacker;
+            throw std::exception("not implemented. at " __FUNCTION__);
         }
 
-    template<>
-        inline unpacker& operator>>(unpacker &unpacker, float &t)
-        {
-            t=unpacker.unpack_float<float>();
-            return unpacker;
-        }
+    template<> inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack_int(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack_int(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack_int(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack_int(t); }
 
-    template<>
-        inline unpacker& operator>>(unpacker &unpacker, double &t)
-        {
-            t=unpacker.unpack_float<double>();
-            return unpacker;
-        }
+    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack_int(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack_int(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack_int(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack_int(t); }
+
+    template<> inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_float(t); }
+    template<> inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
