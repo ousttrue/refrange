@@ -4,27 +4,27 @@
 
 namespace mpack
 {
-    struct PositiveFixint
+    struct positive_fixint
     {
         enum bits_t { bits=0x00 };
         enum mask_t { mask=0x80 };
     };
-    struct Fixmap
+    struct fixmap
     {
         enum bits_t { bits=0x80 };
         enum mask_t { mask=0xF0 };
     };
-    struct Fixarray
+    struct fixarray
     {
         enum bits_t { bits=0x90 };
         enum mask_t { mask=0xF0 };
     };
-    struct Fixstr
+    struct fixstr
     {
         enum bits_t { bits=0xa0 };
         enum mask_t { mask=0xE0};
     };
-    struct NegativeFixint
+    struct negative_fixint
     {
         enum bits_t { bits=0xe0 };
         enum mask_t { mask=0xE0 };
@@ -164,13 +164,13 @@ namespace mpack
                     break;
             }
 
-            if(partial_bit_equal<PositiveFixint>(*m_p)){
+            if(partial_bit_equal<positive_fixint>(*m_p)){
                 unsigned char n=*m_p++;
                 return static_cast<int>(n);
             }
-            else if(partial_bit_equal<NegativeFixint>(*m_p)){
+            else if(partial_bit_equal<negative_fixint>(*m_p)){
                 unsigned char n=*m_p++;
-                return -static_cast<int>(n & ~NegativeFixint::mask);
+                return -static_cast<int>(n & ~negative_fixint::mask);
             }
             else{
                 // not implmented

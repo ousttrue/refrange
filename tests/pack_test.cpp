@@ -63,7 +63,7 @@ TEST(MsgpackTest, small_int)
 
     // check
     ASSERT_EQ(1, buffer.size());
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::PositiveFixint>(buffer[0]));
+    ASSERT_TRUE(mpack::partial_bit_equal<mpack::positive_fixint>(buffer[0]));
 
     // unpack
     mpack::reference_unpacker u(&buffer[0], buffer.size());
@@ -86,7 +86,7 @@ TEST(MsgpackTest, small_negative_int)
 
     // check
     ASSERT_EQ(1, buffer.size());
-    ASSERT_TRUE(mpack::partial_bit_equal<mpack::NegativeFixint>(buffer[0]));
+    ASSERT_TRUE(mpack::partial_bit_equal<mpack::negative_fixint>(buffer[0]));
 
     // unpack
     mpack::reference_unpacker u(&buffer[0], buffer.size());
