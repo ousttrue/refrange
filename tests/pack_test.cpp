@@ -762,3 +762,45 @@ TEST(MsgpackTest, map16)
     }
 }
 
+/// map 32 stores a map whose length is upto (2^32)-1 elements
+/// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
+/// |  0xdf  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|   N*2 objects   |
+/// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
+TEST(MsgpackTest, map32)
+{
+    // packing
+    mpack::vector_packer p;
+    auto pc=mpack::map_context(0xFFFF+1);
+    p << pc; 
+    for(int i=0; i<pc.size; ++i){
+        std::stringstream ss;
+        ss << "key" << (i+1);
+        p << ss.str() << i;
+    }
+
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    EXPECT_EQ(0xdf, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    EXPECT_TRUE(u.is_map());
+
+    // map
+    auto uc=mpack::map_context();
+    u >> uc ;
+    EXPECT_EQ(pc.size, uc.size);
+
+    for(int i=0; i<uc.size; ++i){
+        std::string key;
+        int value;
+        u >> key >> value;
+        std::stringstream ss;
+        ss << "key" << (i+1);
+        EXPECT_EQ(ss.str(), key);
+        EXPECT_EQ(i, value);
+    }
+}
+
