@@ -1,0 +1,305 @@
+#pragma once
+#include <functional>
+#include <sstream>
+
+
+namespace mpack {
+namespace json {
+
+    typedef std::function<size_t(unsigned char *, size_t)> reader_t;
+
+    class parser
+    {
+        ::mpack::msgpack::packer &m_packer;
+        reader_t &m_reader;
+        int m_peek_char;
+
+    public:
+        parser(::mpack::msgpack::packer &packer, reader_t &reader)
+            : m_packer(packer), m_reader(reader), m_peek_char(-1)
+        {}
+
+        bool parse(bool is_key=false)
+        {
+            switch(peek_char(true))
+            {
+                case '{': return parse_object();
+                case '[': return parse_array();
+				case '"': return parse_quated_string('"');
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					return parse_number();
+				default: throw std::invalid_argument(__FUNCTION__);
+            }
+        }
+
+    private:
+        bool is_skip(char c)
+        {
+            switch(c)
+            {
+                case ' ':
+                case '\t':
+                case '\r':
+                case '\n':
+                    return true;
+            }
+
+            return false;
+        }
+
+        char get_char(bool skip=false)
+        {
+            if(!skip){
+                if(m_peek_char!=-1){
+                    char c=m_peek_char;
+                    m_peek_char=-1;
+                    return c;
+                }
+
+                char c;
+                size_t size=m_reader((unsigned char*)&c, 1);
+                if(size==0){
+                    return 0;
+                }
+                return c;
+            }
+            else{
+                if(m_peek_char!=-1 && !is_skip(m_peek_char)){
+                    char c=m_peek_char;
+                    m_peek_char=-1;
+                    return c;
+                }
+
+                m_peek_char=-1;
+
+                while(true){
+                    char c;
+                    size_t size=m_reader((unsigned char*)&c, 1);
+                    if(size==0){
+                        throw std::exception("EOF");
+                    }
+                    if(!is_skip(c)){
+                        return c;
+                    }
+                }
+            }
+        }
+
+        char peek_char(bool skip=false)
+        {
+            if(!skip){
+                if(m_peek_char==-1){
+                    m_peek_char=get_char();
+                }
+
+                return m_peek_char;
+            }
+
+            if(m_peek_char!=-1 && !is_skip(m_peek_char)){
+                return m_peek_char;
+            }
+
+            m_peek_char=get_char(true);
+            return m_peek_char;
+        }
+
+        bool parse_object()
+        {
+            // drop open brace
+			assert(m_peek_char == '{');
+            get_char();
+
+            auto c=::mpack::msgpack::map_context();
+            m_packer << c;
+
+            // search key
+            for(int i=0; true; ++i){
+                char c=peek_char(true);
+                if(c=='}'){
+                    // close
+                    break;
+                }
+                if(i){
+                    if(c!=','){
+                        return false;
+                    }
+                    // drop
+                    get_char();
+                }
+
+                if(!parse(true)){
+                    return false;
+                }
+
+				if (get_char(true) != ':'){
+                    return false;
+                }
+                if(!parse()){
+                    return false;
+                }
+            }
+
+            m_packer.end_collection();
+            return true;
+        }
+
+        bool parse_array()
+        {
+            return false;
+        }
+
+		bool is_digit(char c)
+        {
+            switch (c)
+            {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    return true;
+            }
+
+            return false;
+        }
+
+		bool is_non_numeric(char c)
+		{
+			if (is_skip(c)){
+				return true;
+			}
+			if (is_digit(c)){
+				return false;
+			}
+
+			switch (c)
+			{
+			case ',':
+			case ':':
+			case '}':
+			case ']':
+				return true;
+			}
+
+			return false;
+		}
+
+		bool parse_number()
+		{
+			std::stringstream ss;
+			for (int i = 0; true; ++i)
+			{
+				char c = peek_char();
+				if (is_non_numeric(c)){
+					break;
+				}
+				get_char();
+				ss << c;
+			}
+
+			m_packer << atoi(ss.str().c_str());
+
+			return true;
+		}
+
+		bool parse_quated_string(char quote)
+		{
+			// drop first quote
+			assert(m_peek_char == quote);
+			get_char();
+
+			std::stringstream ss;
+			while (true)
+			{
+				char c=get_char();
+				if (c == quote){
+					break;
+				}
+				ss << c;
+			}
+
+			m_packer << ss.str();
+
+			return true;
+		}
+
+    };
+
+
+    typedef std::function<size_t(const unsigned char *, size_t)> writer_t;
+
+    class converter
+    {
+        writer_t m_writer;
+
+    public:
+        converter(writer_t writer)
+            : m_writer(writer)
+        {
+        }
+
+        void convert(::mpack::msgpack::unpacker &u)
+        {
+            if(u.is_array()){
+                write("[");
+            }
+            else if(u.is_map()){
+                write("{");
+                auto c=::mpack::msgpack::map_context();
+                u >> c;
+                for(int i=0; i<c.size; ++i){
+                    std::string key;
+                    u >> key;
+                    write("\"");
+                    write(key);
+                    write("\"");
+                    write(":");
+
+                    if(u.is_integer()){
+                        int n;
+                        u >> n;
+                        std::stringstream ss;
+                        ss << n;
+                        write(ss.str());
+                    }
+                    /*
+                    else if(u.is_float()){
+                    }
+                    else if(u.is_string()){
+                    }
+                    else if(u.is_bool()){
+                    }
+                    */
+                    else{
+                        // todo
+                        throw std::invalid_argument(__FUNCTION__);
+                    }
+                }
+                write("}");
+            }
+            else{
+            }
+        }
+
+        void write(const std::string  &s)
+        {
+            m_writer((const unsigned char*)s.c_str(), s.size());
+        }
+    };
+
+} // namespace
+} // namespace

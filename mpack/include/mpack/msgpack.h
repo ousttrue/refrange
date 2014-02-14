@@ -3,6 +3,8 @@
 #include <functional>
 #include <algorithm>
 #include <limits>
+#include <stack>
+#include <iterator>
 #include <assert.h>
 
 
@@ -87,48 +89,85 @@ namespace msgpack {
 
 
     //////////////////////////////////////////////////////////////////////////////
-    // array
-    //////////////////////////////////////////////////////////////////////////////
-    struct array_context
-    {
-        size_t size;
-
-        array_context()
-            : size(0)
-        {}
-
-        array_context(size_t _size)
-            : size(_size)
-        {}
-    };
-
-
-    //////////////////////////////////////////////////////////////////////////////
-    // map
-    //////////////////////////////////////////////////////////////////////////////
-    struct map_context
-    {
-        size_t size;
-
-        map_context()
-            : size(0)
-        {}
-
-        map_context(size_t _size)
-            : size(_size)
-        {}
-    };
-
-
-    //////////////////////////////////////////////////////////////////////////////
     // packer
     //////////////////////////////////////////////////////////////////////////////
     typedef std::function<size_t(const unsigned char*, size_t)> writer_t;
 
+    struct collection_context
+    {
+        enum collection_t
+        {
+            collection_unknown,
+            collection_array,
+            collection_map,
+        };
+        collection_t type;
+
+        // if zero. collection is not closed. use self buffer
+        // if non zero. collection is closed. use writer
+        size_t size;
+        writer_t writer;
+        std::vector<unsigned char> buffer;
+        bool closed;
+
+        collection_context()
+            : type(collection_unknown), size(0), closed(false)
+        {}
+
+        collection_context(collection_t _type)
+            : type(_type), size(0), closed(false)
+        {}
+
+        collection_context(collection_t _type, size_t _size)
+            : type(_type), size(_size), closed(size!=0)
+        {}
+
+        size_t write(const unsigned char *p, size_t len)
+        {
+            if(closed){
+                return writer(p, len);
+            }
+            else{
+                std::copy(p, p+len, std::back_inserter(buffer));
+				return len;
+            }
+        }
+
+        void close()
+        {
+            closed=true;
+        }
+
+        void new_item()
+        {
+            ++size;
+        }
+    };
+
+    inline collection_context array_context(size_t size=0){
+        return collection_context(collection_context::collection_array, size);
+    }
+
+    inline collection_context map_context(size_t size=0){
+        // key + value
+        return collection_context(collection_context::collection_map, size*2);
+    }
+
     class packer
     {
+        std::stack<collection_context> m_context_stack;
+
     public:
         writer_t m_writer;
+
+        // increment collection member count
+        void new_item()
+        {
+			if (m_context_stack.empty()){
+				return;
+			}
+            m_context_stack.top().new_item();
+        }
 
         packer& pack_nil()
         {
@@ -148,6 +187,7 @@ namespace msgpack {
             if(n<0){
                 if(n>-0x1f){
                     // negative fix int
+                    new_item();
                     auto v = negative_fixint::bits | -static_cast<char>(n);
                     write_value(static_cast<char>(v));
                     return *this;
@@ -180,6 +220,7 @@ namespace msgpack {
             else{
                 if(n<=0x7f){
                     // 7bit byte
+                    new_item();
                     write_value(static_cast<unsigned char>(n));
                     return *this;
                 }
@@ -233,30 +274,31 @@ namespace msgpack {
         {
             if(len<32){
                 // fixstr
+                new_item();
                 auto v = fixstr::bits | len;
                 write_value(static_cast<char>(v));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((const unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xff){
                 // str8
                 write_head_byte(byte_str8);
                 write_value(static_cast<unsigned char>(len));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffff){
                 // str16
                 write_head_byte(byte_str16);
                 write_value(static_cast<unsigned short>(len));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffffffff){
                 // str32
                 write_head_byte(byte_str32);
                 write_value(static_cast<unsigned int>(len));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else{
@@ -271,21 +313,21 @@ namespace msgpack {
                 // bin8
                 write_head_byte(byte_bin8);
                 write_value(static_cast<unsigned char>(len));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffff){
                 // bin16
                 write_head_byte(byte_bin16);
                 write_value(static_cast<unsigned short>(len));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffffffff){
                 // bin32
                 write_head_byte(byte_bin32);
                 write_value(static_cast<unsigned int>(len));
-                size_t size=m_writer((unsigned char*)p, len);
+                size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else{
@@ -294,66 +336,118 @@ namespace msgpack {
             return *this;
         }
 
-        packer &begin_array(const array_context &c)
+        packer &begin_collection(const collection_context &c)
         {
-            if(c.size<0x0F){
-                // fixarray
-                auto v = fixarray::bits | c.size;
-                write_value(static_cast<char>(v));
-            }
-            else if(c.size<0xFFFF){
-                // array16
-                write_head_byte(byte_array16);
-                write_value(static_cast<unsigned short>(c.size));
-            }
-            else if(c.size<0xFFFFFFFF){
-                // array32
-                write_head_byte(byte_array32);
-                write_value(static_cast<unsigned int>(c.size));
+            writer_t writer;
+            if(m_context_stack.empty()){
+                writer=m_writer;
             }
             else{
-                throw std::out_of_range(__FUNCTION__);
+                auto &prev=m_context_stack.top();
+                writer=[&prev](const unsigned char *p, size_t len)->size_t{
+                    return prev.write(p, len);
+                };
+            }
+            m_context_stack.push(c);
+            m_context_stack.top().writer=writer;
+            if(c.size==0){
+                // do nothing. write when end_collection
+            }
+            else{
+                write_collection_head(c);
             }
 
             return *this;
         }
 
-        packer &begin_map(const map_context &c)
+        void write_collection_head(const collection_context &c)
         {
-            if(c.size<0x0F){
-                // fixmap
-                auto v = fixmap::bits | c.size;
-                write_value(static_cast<char>(v));
+            if(c.type==collection_context::collection_array){
+                if(c.size<0x0F){
+                    // fixarray
+                    new_item();
+                    auto v = fixarray::bits | c.size;
+                    write_value(static_cast<char>(v));
+                }
+                else if(c.size<0xFFFF){
+                    // array16
+                    write_head_byte(byte_array16);
+                    write_value(static_cast<unsigned short>(c.size));
+                }
+                else if(c.size<0xFFFFFFFF){
+                    // array32
+                    write_head_byte(byte_array32);
+                    write_value(static_cast<unsigned int>(c.size));
+                }
+                else{
+                    throw std::out_of_range(__FUNCTION__);
+                }
             }
-            else if(c.size<0xFFFF){
-                // map16
-                write_head_byte(byte_map16);
-                write_value(static_cast<unsigned short>(c.size));
-            }
-            else if(c.size<0xFFFFFFFF){
-                // map32
-                write_head_byte(byte_map32);
-                write_value(static_cast<unsigned int>(c.size));
+            else if(c.type==collection_context::collection_map){
+                assert(c.size%2==0);
+                auto pairs=c.size/2;
+                if(c.size<0x0F){
+                    // fixmap
+                    new_item();
+                    auto v = fixmap::bits | pairs;
+                    write_value(static_cast<char>(v));
+                }
+                else if(c.size<0xFFFF){
+                    // map16
+                    write_head_byte(byte_map16);
+                    write_value(static_cast<unsigned short>(pairs));
+                }
+                else if(c.size<0xFFFFFFFF){
+                    // map32
+                    write_head_byte(byte_map32);
+                    write_value(static_cast<unsigned int>(pairs));
+                }
+                else{
+                    throw std::out_of_range(__FUNCTION__);
+                }
             }
             else{
-                throw std::out_of_range(__FUNCTION__);
+                throw std::exception(__FUNCTION__);
+            }
+        }
+
+        packer& end_collection()
+        {
+            m_context_stack.top().close();
+            write_collection_head(m_context_stack.top());
+
+            // copy buffer
+            auto buffer=m_context_stack.top().buffer;
+            m_context_stack.pop();
+            if(!buffer.empty()){
+                write(&buffer[0], buffer.size());
             }
 
             return *this;
         }
-
 
     private:
         void write_head_byte(byte_type head_byte)
         {
+            new_item();
             write_value(static_cast<unsigned char>(head_byte));
         }
 
         template<typename T>
         void write_value(T n)
         {
-            size_t size=m_writer((unsigned char*)&n, sizeof(T));
+            size_t size=write((unsigned char*)&n, sizeof(T));
             assert(size==sizeof(T));
+        }
+
+        size_t write(const unsigned char* p, size_t len)
+        {
+            if(m_context_stack.empty()){
+                return m_writer(p, len);
+            }
+            else{
+                m_context_stack.top().write(p, len);
+            }
         }
     };
 
@@ -385,12 +479,8 @@ namespace msgpack {
         if(!t.empty()){ packer.pack_bin(&t[0], t.size()); }; return packer;
     }
 
-    // array
-    inline packer& operator<<(packer &packer, const array_context &t){ return packer.begin_array(t); }
-
-    // map
-    inline packer& operator<<(packer &packer, const map_context &t){ return packer.begin_map(t); }
-
+    // collection
+    inline packer& operator<<(packer &packer, const collection_context &t){ return packer.begin_collection(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // unpacker
@@ -636,31 +726,6 @@ namespace msgpack {
             return partial_bit_equal<fixarray>(head_byte);
         }
 
-        unpacker &unpack_array(array_context &c)
-        {
-            auto head_byte=read_value<unsigned char>();
-            switch(head_byte)
-            {
-                case byte_array16:
-                    c.size=read_value<unsigned short>();
-                    break;
-
-                case byte_array32:
-                    c.size=read_value<unsigned int>();
-                    break;
-
-                default:
-                    if(partial_bit_equal<fixarray>(head_byte)){
-                        c.size=extract_head_byte<fixarray>(head_byte);
-                    }
-                    else{
-						throw std::invalid_argument(__FUNCTION__);
-                    }
-            }
-
-            return *this;
-        }
-
         bool is_map()
         {
             auto head_byte=peek_byte();
@@ -673,21 +738,57 @@ namespace msgpack {
             return partial_bit_equal<fixmap>(head_byte);
         }
 
-        unpacker &unpack_map(map_context &c)
+        bool is_integer()
+        {
+            auto head_byte=peek_byte();
+            switch(head_byte)
+            {
+                case byte_int8:
+                case byte_int16:
+                case byte_int32:
+                case byte_int64:
+                case byte_uint8:
+                case byte_uint16:
+                case byte_uint32:
+                case byte_uint64:
+                    return true;
+            }
+            return partial_bit_equal<positive_fixint>(head_byte)
+                || partial_bit_equal<negative_fixint>(head_byte);
+        }
+
+        unpacker &unpack_collection(collection_context &c)
         {
             auto head_byte=read_value<unsigned char>();
             switch(head_byte)
             {
+                case byte_array16:
+                    c.type=collection_context::collection_array;
+                    c.size=read_value<unsigned short>();
+                    break;
+
+                case byte_array32:
+                    c.type=collection_context::collection_array;
+                    c.size=read_value<unsigned int>();
+                    break;
+
                 case byte_map16:
+                    c.type=collection_context::collection_map;
                     c.size=read_value<unsigned short>();
                     break;
 
                 case byte_map32:
+                    c.type=collection_context::collection_map;
                     c.size=read_value<unsigned int>();
                     break;
 
                 default:
-                    if(partial_bit_equal<fixmap>(head_byte)){
+                    if(partial_bit_equal<fixarray>(head_byte)){
+                        c.type=collection_context::collection_array;
+                        c.size=extract_head_byte<fixarray>(head_byte);
+                    }
+                    else if(partial_bit_equal<fixmap>(head_byte)){
+                        c.type=collection_context::collection_map;
                         c.size=extract_head_byte<fixmap>(head_byte);
                     }
                     else{
@@ -765,10 +866,7 @@ namespace msgpack {
     inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack_bin(t); }
 
     // array
-    inline unpacker& operator>>(unpacker &unpacker, array_context &t){ return unpacker.unpack_array(t); }
-
-    // map
-    inline unpacker& operator>>(unpacker &unpacker, map_context &t){ return unpacker.unpack_map(t); }
+    inline unpacker& operator>>(unpacker &unpacker, collection_context &t){ return unpacker.unpack_collection(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility

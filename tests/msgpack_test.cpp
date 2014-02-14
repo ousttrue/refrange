@@ -762,6 +762,7 @@ TEST(MsgpackTest, map16)
     }
 }
 
+/*
 /// map 32 stores a map whose length is upto (2^32)-1 elements
 /// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
 /// |  0xdf  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|   N*2 objects   |
@@ -803,4 +804,4 @@ TEST(MsgpackTest, map32)
         EXPECT_EQ(i, value);
     }
 }
-
+*/
