@@ -645,3 +645,39 @@ TEST(MsgpackTest, array16)
     }
 }
 
+/// array 32 stores an array whose length is upto (2^32)-1 elements:
+/// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
+/// |  0xdd  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|    N objects    |
+/// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
+TEST(MsgpackTest, array32)
+{
+    // packing
+    mpack::vector_packer p;
+    auto pc=mpack::array_context(0xFFFF+1);
+    p << pc;
+    for(int i=0; i<pc.size; ++i){
+        p << i;
+    }
+
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    EXPECT_EQ(0xdd, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    EXPECT_TRUE(u.is_array());
+
+    // array
+    auto uc=mpack::array_context();
+    u >> uc ;
+    EXPECT_EQ(pc.size, uc.size);
+
+    for(int i=0; i<uc.size; ++i){
+        int n;
+        u >> n;
+        EXPECT_EQ(i, n);
+    }
+}
+
