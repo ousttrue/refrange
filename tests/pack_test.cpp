@@ -482,3 +482,88 @@ TEST(MsgpackTest, str32)
     EXPECT_EQ(out, str);
 }
 
+/// bin 8 stores a byte array whose length is upto (2^8)-1 bytes:
+/// +--------+--------+========+
+/// |  0xc4  |XXXXXXXX|  data  |
+/// +--------+--------+========+
+TEST(MsgpackTest, bin8)
+{
+    std::vector<unsigned char> buf;
+    buf.push_back(0);
+
+    // packing
+    mpack::vector_packer p;
+    p << buf;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(2+1, buffer.size());
+    EXPECT_EQ(0xc4, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    std::vector<unsigned char> out;
+    u >> out;
+
+    EXPECT_EQ(buf, out);
+}
+
+/// bin 16 stores a byte array whose length is upto (2^16)-1 bytes:
+/// +--------+--------+--------+========+
+/// |  0xc5  |YYYYYYYY|YYYYYYYY|  data  |
+/// +--------+--------+--------+========+
+TEST(MsgpackTest, bin16)
+{
+    std::vector<unsigned char> buf;
+    for(int i=0; i<0xFF+1; ++i){
+        buf.push_back(i % 0xFF);
+    }
+
+    // packing
+    mpack::vector_packer p;
+    p << buf;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(3+0xFF+1, buffer.size());
+    EXPECT_EQ(0xc5, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    std::vector<unsigned char> out;
+    u >> out;
+
+    EXPECT_EQ(buf, out);
+}
+
+/// bin 32 stores a byte array whose length is upto (2^32)-1 bytes:
+/// +--------+--------+--------+--------+--------+========+
+/// |  0xc6  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|  data  |
+/// +--------+--------+--------+--------+--------+========+
+TEST(MsgpackTest, bin32)
+{
+    std::vector<unsigned char> buf;
+    for(int i=0; i<0xFFFF+1; ++i){
+        buf.push_back(i % 0xFF);
+    }
+
+    // packing
+    mpack::vector_packer p;
+    p << buf;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(5+0xFFFF+1, buffer.size());
+    EXPECT_EQ(0xc6, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    std::vector<unsigned char> out;
+    u >> out;
+
+    EXPECT_EQ(buf, out);
+}
+

@@ -227,6 +227,35 @@ namespace mpack
             return *this;
         }
 
+        packer& pack_bin(const unsigned char *p, size_t len)
+        {
+            if(len<0xff){
+                // bin8
+                write_head_byte(byte_bin8);
+                write_value(static_cast<unsigned char>(len));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
+            else if(len<0xffff){
+                // bin16
+                write_head_byte(byte_bin16);
+                write_value(static_cast<unsigned short>(len));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
+            else if(len<0xffffffff){
+                // bin32
+                write_head_byte(byte_bin32);
+                write_value(static_cast<unsigned int>(len));
+                size_t size=m_writer((unsigned char*)p, len);
+                assert(size==len);
+            }
+            else{
+                throw std::out_of_range(__FUNCTION__);
+            }
+            return *this;
+        }
+
     private:
         void write_head_byte(byte_type head_byte)
         {
@@ -256,6 +285,10 @@ namespace mpack
 
     inline packer& operator<<(packer &packer, const char *t) { return packer.pack_str(t); }
     inline packer& operator<<(packer &packer, const std::string &t){ return packer.pack_str(t.c_str()); }
+
+    inline packer& operator<<(packer &packer, const std::vector<unsigned char> &t){ 
+        if(!t.empty()){ packer.pack_bin(&t[0], t.size()); }; return packer;
+    }
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
@@ -385,6 +418,7 @@ namespace mpack
                 case byte_str8:
                     {
                         auto len=read_value<unsigned char>();
+                        s.reserve(len);
                         for(size_t i=0; i<len; ++i){
                             s.push_back(read_value<char>());
                         }
@@ -394,6 +428,7 @@ namespace mpack
                 case byte_str16:
                     {
                         auto len=read_value<unsigned short>();
+                        s.reserve(len);
                         for(size_t i=0; i<len; ++i){
                             s.push_back(read_value<char>());
                         }
@@ -403,6 +438,7 @@ namespace mpack
                 case byte_str32:
                     {
                         auto len=read_value<unsigned int>();
+                        s.reserve(len);
                         for(size_t i=0; i<len; ++i){
                             s.push_back(read_value<char>());
                         }
@@ -412,6 +448,7 @@ namespace mpack
                 default:
                     if(partial_bit_equal<fixstr>(head_byte)){
                         auto len=extract_head_byte<fixstr>(head_byte);
+                        s.reserve(len);
                         for(size_t i=0; i<len; ++i){
                             s.push_back(read_value<char>());
                         }
@@ -424,6 +461,50 @@ namespace mpack
 
             return *this;
         }
+
+        unpacker& unpack_bin(std::vector<unsigned char> &b)
+        {
+            unsigned char head_byte=read_value<unsigned char>();
+
+            switch(head_byte)
+            {
+                case byte_bin8:
+                    {
+                        auto len=read_value<unsigned char>();
+                        b.reserve(len);
+                        for(size_t i=0; i<len; ++i){
+                            b.push_back(read_value<char>());
+                        }
+                    }
+                    break;
+
+                case byte_bin16:
+                    {
+                        auto len=read_value<unsigned short>();
+                        b.reserve(len);
+                        for(size_t i=0; i<len; ++i){
+                            b.push_back(read_value<char>());
+                        }
+                    }
+                    break;
+
+                case byte_bin32:
+                    {
+                        auto len=read_value<unsigned int>();
+                        b.reserve(len);
+                        for(size_t i=0; i<len; ++i){
+                            b.push_back(read_value<char>());
+                        }
+                    }
+                    break;
+
+                default:
+                    throw std::exception("not implemented. at " __FUNCTION__);
+            }
+
+            return *this;
+        }
+
 
     private:
         template<typename T>
@@ -456,6 +537,7 @@ namespace mpack
     inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
 
     inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack_string(t); }
+    inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack_bin(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
