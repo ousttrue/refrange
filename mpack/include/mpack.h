@@ -71,24 +71,24 @@ namespace mpack
         byte_map32=0xdf,
     };
 
-    class packer
+    class vector_packer
     {
         public:
             std::vector<unsigned char> packed_buffer;
 
-            packer& pack_nil()
+            vector_packer& pack_nil()
             {
                 packed_buffer.push_back(0xc0);
                 return *this;
             }
 
-            packer& pack_bool(bool b)
+            vector_packer& pack_bool(bool b)
             {
                 packed_buffer.push_back(b ? 0xc3 : 0xc2);
                 return *this;
             }
 
-            packer& pack_int(int n)
+            vector_packer& pack_int(int n)
             {
                 if(n<0){
                     if(n>-0x1f){
@@ -121,14 +121,14 @@ namespace mpack
     };
 
     template<typename T>
-        packer& operator<<(packer &packer, const T &t)
+        vector_packer& operator<<(vector_packer &packer, const T &t)
         {
             // not implmented
             throw std::exception();
         }
 
     // int
-    inline packer& operator<<(packer &packer, int n)
+    inline vector_packer& operator<<(vector_packer &packer, int n)
     {
         packer.packed_buffer.push_back(n);
         return packer;

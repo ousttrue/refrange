@@ -8,7 +8,7 @@
 TEST(MsgpackTest, nil) 
 {
     // packing
-    mpack::packer p;
+    mpack::vector_packer p;
     p.pack_nil();
     auto &buffer=p.packed_buffer;
 
@@ -24,7 +24,7 @@ TEST(MsgpackTest, nil)
 TEST(MsgpackTest, false)
 {
     // packing
-    mpack::packer p;
+    mpack::vector_packer p;
     p.pack_bool(false);
     auto &buffer=p.packed_buffer;
 
@@ -40,7 +40,7 @@ TEST(MsgpackTest, false)
 TEST(MsgpackTest, true)
 {
     // packing
-    mpack::packer p;
+    mpack::vector_packer p;
     p.pack_bool(true);
     auto &buffer=p.packed_buffer;
 
@@ -56,7 +56,7 @@ TEST(MsgpackTest, true)
 TEST(MsgpackTest, small_int)
 {
     // packing
-    mpack::packer p;
+    mpack::vector_packer p;
     p.pack_int(1);
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -79,7 +79,7 @@ TEST(MsgpackTest, small_int)
 TEST(MsgpackTest, small_negative_int)
 {
     // packing
-    mpack::packer p;
+    mpack::vector_packer p;
     p.pack_int(-1);
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
@@ -102,7 +102,7 @@ TEST(MsgpackTest, small_negative_int)
 TEST(MsgpackTest, uint8)
 {
     // packing
-    mpack::packer p;
+    mpack::vector_packer p;
     p.pack_int(128);
     auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
