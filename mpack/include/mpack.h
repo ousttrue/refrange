@@ -237,12 +237,12 @@ namespace mpack
         template<typename T>
         T unpack_int()
         {
-            unsigned char head_byte=read_byte();
+            unsigned char head_byte=read_uint8();
 
             switch(head_byte)
             {
                 case byte_uint8:
-                    return read_byte();
+                    return read_uint8();
 
                 case byte_uint16:
                     return read_uint16();
@@ -266,7 +266,7 @@ namespace mpack
         }
 
     private:
-        unsigned char read_byte()
+        unsigned char read_uint8()
         {
             unsigned char byte;
             size_t size=m_reader(&byte, 1);
