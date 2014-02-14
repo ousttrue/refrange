@@ -141,3 +141,28 @@ TEST(MsgpackTest, uint16)
     EXPECT_EQ(256, n);
 }
 
+/// uint 32 stores a 32-bit big-endian unsigned integer
+/// +--------+--------+--------+--------+--------+
+/// |  0xce  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ
+/// +--------+--------+--------+--------+--------+
+TEST(MsgpackTest, uint32)
+{
+    int value=65536;
+
+    // packing
+    mpack::vector_packer p;
+    p.pack_int(value);
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(5, buffer.size());
+    EXPECT_EQ(0xce, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    int n=0;
+    u >> n;
+    EXPECT_EQ(value, n);
+}
+

@@ -112,21 +112,27 @@ namespace mpack
             }
             else{
                 if(n<=0x7f){
+                    // 7bit byte
                     write_byte(static_cast<unsigned char>(n));
                     return *this;
                 }
                 else if(n<=0xff){
+                    // uint8
                     write_byte(byte_uint8);
                     write_byte(static_cast<unsigned char>(n));
                     return *this;
                 }
                 if(n<=0xffff){
+                    // uint16
                     write_byte(byte_uint16);
                     write_uint16(static_cast<unsigned short>(n));
                     return *this;
                 }
                 else{
-                    throw std::exception("not implemented. at " __FUNCTION__);
+                    // uint32
+                    write_byte(byte_uint32);
+                    write_uint32(static_cast<unsigned int>(n));
+                    return *this;
                 }
             }
         }
@@ -142,6 +148,12 @@ namespace mpack
         {
             size_t size=m_writer((unsigned char*)&n, 2);
             assert(size==2);
+        }
+
+        void write_uint32(unsigned int n)
+        {
+            size_t size=m_writer((unsigned char*)&n, 4);
+            assert(size==4);
         }
     };
 
@@ -165,6 +177,9 @@ namespace mpack
 
                 case byte_uint16:
                     return read_uint16();
+
+                case byte_uint32:
+                    return read_uint32();
             }
 
             if(partial_bit_equal<positive_fixint>(head_byte)){
@@ -192,6 +207,14 @@ namespace mpack
             unsigned short n;
             size_t size=m_reader((unsigned char*)&n, 2);
             assert(size==2);
+            return n;
+        }
+
+        unsigned int read_uint32()
+        {
+            unsigned int n;
+            size_t size=m_reader((unsigned char*)&n, 4);
+            assert(size==4);
             return n;
         }
     };
