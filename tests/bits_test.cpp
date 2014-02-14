@@ -7,4 +7,3 @@ TEST(MsgpackTest, bits)
     EXPECT_EQ(0x80, mpack::positive_fixint::mask);
 }
 
-

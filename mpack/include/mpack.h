@@ -255,6 +255,7 @@ namespace mpack
     inline packer& operator<<(packer &packer, const double t) { return packer.pack_double(t); }
 
     inline packer& operator<<(packer &packer, const char *t) { return packer.pack_str(t); }
+    inline packer& operator<<(packer &packer, const std::string &t){ return packer.pack_str(t.c_str()); }
 
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
@@ -476,7 +477,6 @@ namespace mpack
             };
         }
     };
-
 
     class memory_unpacker: public unpacker
     {

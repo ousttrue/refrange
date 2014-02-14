@@ -452,3 +452,33 @@ TEST(MsgpackTest, str16)
     EXPECT_EQ(out, str);
 }
 
+/// str 32 stores a byte array whose length is upto (2^32)-1 bytes:
+/// +--------+--------+--------+--------+--------+========+
+/// |  0xdb  |AAAAAAAA|AAAAAAAA|AAAAAAAA|AAAAAAAA|  data  |
+/// +--------+--------+--------+--------+--------+========+
+TEST(MsgpackTest, str32)
+{
+    std::string str;
+    for(int i=0; i<(0xFFFF+1); ++i)
+    {
+        str.push_back('0'+(i%10));
+    }
+
+    // packing
+    mpack::vector_packer p;
+    p << str;
+    auto &buffer=p.packed_buffer;
+    ASSERT_FALSE(buffer.empty());
+
+    // check
+    ASSERT_EQ(5+0xFFFF+1, buffer.size());
+    EXPECT_EQ(0xdb, buffer[0]);
+
+    // unpack
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
+    std::string out;
+    u >> out;
+
+    EXPECT_EQ(out, str);
+}
+
