@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <functional>
+#include <algorithm>
 #include <assert.h>
 
 
@@ -136,64 +137,64 @@ namespace mpack
     };
 
 
-    class reference_unpacker
-    {
-        const unsigned char *m_begin;
-        const unsigned char *m_p;
-        size_t m_size;
+    typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 
-        public:
-        reference_unpacker(const unsigned char*p, size_t size)
-            : m_begin(p), m_p(m_begin), m_size(size)
-        {
-        };
+
+    class unpacker
+    {
+    public:
+        reader_t m_reader;
 
         int unpack_int()
         {
-            if(m_p>=m_begin+m_size){
-                // over
-                throw std::exception();
-            }
+            unsigned char head_byte=read_byte();
 
-            switch(*m_p)
+            switch(head_byte)
             {
                 case byte_uint8:
                     {
-                        ++m_p;
-                        unsigned char n=*m_p++;
-                        return n;
+                        return read_byte();
                     }
                     break;
             }
 
-            if(partial_bit_equal<positive_fixint>(*m_p)){
-                unsigned char n=*m_p++;
-                return static_cast<int>(n);
+            if(partial_bit_equal<positive_fixint>(head_byte)){
+                return static_cast<int>(head_byte);
             }
-            else if(partial_bit_equal<negative_fixint>(*m_p)){
-                unsigned char n=*m_p++;
-                return -static_cast<int>(n & ~negative_fixint::mask);
+            else if(partial_bit_equal<negative_fixint>(head_byte)){
+                return -static_cast<int>(head_byte & ~negative_fixint::mask);
             }
             else{
                 // not implmented
                 throw std::exception();
             }
         }
+
+    private:
+        unsigned char read_byte()
+        {
+            unsigned char byte;
+            size_t size=m_reader(&byte, 1);
+            assert(size==1);
+            return byte;
+        }
     };
 
+
     template<typename T>
-        reference_unpacker& operator>>(reference_unpacker &unpacker, const T &t)
+        unpacker& operator>>(unpacker &unpacker, const T &t)
         {
             // not implmented
             throw std::exception();
         }
 
     // int
-    inline reference_unpacker& operator>>(reference_unpacker &unpacker, int &n)
+    inline unpacker& operator>>(unpacker &unpacker, int &n)
     {
         n=unpacker.unpack_int();
         return unpacker;
     }
+
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
@@ -213,6 +214,33 @@ namespace mpack
                 }
                 return size;
             };
+        }
+    };
+
+
+    class memory_unpacker: public unpacker
+    {
+        const unsigned char *m_begin;
+        const unsigned char *m_p;
+        size_t m_size;
+
+    public:
+        memory_unpacker(const unsigned char *begin, size_t size)
+            : m_begin(begin), m_p(m_begin), m_size(size)
+        {
+            auto self=this;
+            m_reader=[self](unsigned char *p, size_t size)->size_t
+            {
+                return self->read(p, size);
+            };
+        }
+
+        size_t read(unsigned char *p, size_t size)
+        {
+            // todo: boundary check
+            std::copy(m_p, m_p+size, p);
+			m_p+=size;
+            return size;
         }
     };
 };

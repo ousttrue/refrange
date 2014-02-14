@@ -66,7 +66,7 @@ TEST(MsgpackTest, small_int)
     ASSERT_TRUE(mpack::partial_bit_equal<mpack::positive_fixint>(buffer[0]));
 
     // unpack
-    mpack::reference_unpacker u(&buffer[0], buffer.size());
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
     int n=-0;
     u >> n;
     EXPECT_EQ(1, n);
@@ -89,7 +89,7 @@ TEST(MsgpackTest, small_negative_int)
     ASSERT_TRUE(mpack::partial_bit_equal<mpack::negative_fixint>(buffer[0]));
 
     // unpack
-    mpack::reference_unpacker u(&buffer[0], buffer.size());
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(-1, n);
@@ -112,7 +112,7 @@ TEST(MsgpackTest, uint8)
     EXPECT_EQ(0xcc, buffer[0]);
 
     // unpack
-    mpack::reference_unpacker u(&buffer[0], buffer.size());
+    auto u=mpack::memory_unpacker(&buffer[0], buffer.size());
     int n=0;
     u >> n;
     EXPECT_EQ(128, n);
