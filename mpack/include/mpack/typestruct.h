@@ -81,6 +81,52 @@ inline typecategory_t typecategory(unsigned char b)
     return typecategory_unknown;
 }
 
+inline void drop(unpacker &u)
+{
+	auto category=typecategory(u.peek_byte());
+    switch(category)
+    {
+        case typecategory_bool:
+            {
+                bool b;
+                u >> b;
+            }
+            break;
+
+        case typecategory_int:
+            {
+                int n;
+                u >> n;
+            }
+            break;
+
+        case typecategory_float:
+            {
+                float n;
+                u >> n;
+            }
+            break;
+
+        case typecategory_byte_array:
+            {
+                std::vector<unsigned char> bin;
+                u >> bin;
+            }
+            break;
+
+		case typecategory_string:
+			{
+				std::string s;
+				u >> s;
+			}
+			break;
+
+        default:
+			throw std::exception(__FUNCTION__);
+            break;
+    }
+}
+
 inline void typestruct(unpacker &u, std::ostream &os)
 {
     if(u.is_array()){
@@ -93,6 +139,7 @@ inline void typestruct(unpacker &u, std::ostream &os)
             }
             typestruct(u,  os);
         }
+        os << "]";
     }
     else if(u.is_map()){
         os << "{";
@@ -106,6 +153,7 @@ inline void typestruct(unpacker &u, std::ostream &os)
             os << ":";
             typestruct(u,  os);
         }
+        os << "}";
     }
     else{
         switch(typecategory(u.peek_byte()))
@@ -126,10 +174,15 @@ inline void typestruct(unpacker &u, std::ostream &os)
                 os << "byte[]";
                 break;
 
+			case typecategory_string:
+				os << "string";
+				break;
+
 			default:
                 os << "unknown";
                 break;
         }
+        drop(u);
     }
 }
 
