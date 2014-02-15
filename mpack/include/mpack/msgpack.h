@@ -474,7 +474,17 @@ namespace msgpack {
 
         unpacker()
             : m_peek_byte(-1)
+        {}
+
+        unsigned char peek_byte()
         {
+            if(m_peek_byte==-1){
+                unsigned char byte;
+                auto size=read(&byte, 1);
+                assert(size==1);
+                m_peek_byte=byte;
+            }
+            return m_peek_byte;
         }
 
         unpacker& unpack_bool(bool &t)
@@ -776,7 +786,6 @@ namespace msgpack {
 
             return *this;
         }
-
     private:
         template<typename T>
         T read_value()
@@ -786,17 +795,6 @@ namespace msgpack {
             return n;
         }
 
-        unsigned char peek_byte()
-        {
-            if(m_peek_byte==-1){
-                unsigned char byte;
-                auto size=read(&byte, 1);
-                assert(size==1);
-                m_peek_byte=byte;
-            }
-            return m_peek_byte;
-        }
-            
         size_t read(unsigned char *p, size_t len)
         {
             if(m_peek_byte==-1){

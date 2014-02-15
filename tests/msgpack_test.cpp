@@ -71,7 +71,7 @@ TEST(MsgpackTest, small_int)
 
     // unpack
 	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
-    int n=-0;
+    int n=0;
     u >> n;
     EXPECT_EQ(1, n);
 }
