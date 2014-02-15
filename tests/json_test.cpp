@@ -15,8 +15,8 @@ TEST(JsonTest, parse)
 		return ss.gcount();
     };
 
-    mpack::json::parser parser(p, reader);
-    ASSERT_TRUE(parser.parse());
+    mpack::json::parser parser(reader);
+    ASSERT_TRUE(parser.parse(p));
 
     // msgpack to json
     {

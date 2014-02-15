@@ -3,7 +3,6 @@
 #include <functional>
 #include <algorithm>
 #include <limits>
-#include <stack>
 #include <iterator>
 #include <assert.h>
 
@@ -102,71 +101,75 @@ namespace msgpack {
             collection_map,
         };
         collection_t type;
-
-        // if zero. collection is not closed. use self buffer
-        // if non zero. collection is closed. use writer
         size_t size;
-        writer_t writer;
-        std::vector<unsigned char> buffer;
-        bool closed;
+
+		const unsigned char *p;
+		size_t len;
 
         collection_context()
-            : type(collection_unknown), size(0), closed(false)
+            : type(collection_unknown), size(0), p(0), len(0)
         {}
 
         collection_context(collection_t _type)
-            : type(_type), size(0), closed(false)
+            : type(_type), size(0), p(0), len(0)
         {}
 
         collection_context(collection_t _type, size_t _size)
-            : type(_type), size(_size), closed(size!=0)
+            : type(_type), size(_size), p(0), len(0)
         {}
-
-        size_t write(const unsigned char *p, size_t len)
-        {
-            if(closed){
-                return writer(p, len);
-            }
-            else{
-                std::copy(p, p+len, std::back_inserter(buffer));
-				return len;
-            }
-        }
-
-        void close()
-        {
-            closed=true;
-        }
-
-        void new_item()
-        {
-            ++size;
-        }
+		
+		collection_context(collection_t _type, size_t _size, const unsigned char *_p, size_t _len)
+			: type(_type), size(_size), p(_p), len(_len)
+		{
+		}
     };
 
+    // array
     inline collection_context array(size_t size=0){
         return collection_context(collection_context::collection_array, size);
     }
 
+    // map
     inline collection_context map(size_t size=0){
-        // key + value
         return collection_context(collection_context::collection_map, size*2);
+    }
+
+    inline collection_context map(size_t size, const unsigned char *p, size_t len)
+    {
+        return collection_context(collection_context::collection_map, size*2, p, len);
     }
 
     class packer
     {
-        std::stack<collection_context> m_context_stack;
+        struct ItemCount
+        {
+            unsigned int current;
+            unsigned int max;
+            ItemCount()
+                : current(0), max(0)
+            {}
+            ItemCount(unsigned int _max)
+                : current(0), max(_max)
+            {}
+        };
+        std::vector<ItemCount> m_itemCounts;
 
     public:
         writer_t m_writer;
 
-        // increment collection member count
-        void new_item()
-        {
-			if (m_context_stack.empty()){
-				return;
-			}
-            m_context_stack.top().new_item();
+        packer()
+            : m_itemCounts(1)
+        {}
+        size_t items()const{ return m_itemCounts[0].current; }
+        void new_item() 
+        { 
+            auto &top=m_itemCounts.back();
+            ++top.current;
+            if(m_itemCounts.size()>1 && top.current==top.max){
+                // close collection
+                m_itemCounts.pop_back();
+            }
+            assert(!m_itemCounts.empty());
         }
 
         packer& pack_nil()
@@ -338,45 +341,28 @@ namespace msgpack {
 
         packer &begin_collection(const collection_context &c)
         {
-            writer_t writer;
-            if(m_context_stack.empty()){
-                writer=m_writer;
-            }
-            else{
-                auto &prev=m_context_stack.top();
-                writer=[&prev](const unsigned char *p, size_t len)->size_t{
-                    return prev.write(p, len);
-                };
-            }
-            m_context_stack.push(c);
-            m_context_stack.top().writer=writer;
-            if(c.size==0){
-                // do nothing. write when end_collection
-            }
-            else{
-                write_collection_head(c);
-            }
+            assert(c.type!=collection_context::collection_unknown);
+            // allow empty collection
+            //assert(c.size);
 
-            return *this;
-        }
-
-        void write_collection_head(const collection_context &c)
-        {
             if(c.type==collection_context::collection_array){
                 if(c.size<0x0F){
                     // fixarray
                     new_item();
+                    m_itemCounts.push_back(ItemCount(c.size));
                     auto v = fixarray::bits | c.size;
                     write_value(static_cast<char>(v));
                 }
                 else if(c.size<0xFFFF){
                     // array16
                     write_head_byte(byte_array16);
+                    m_itemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned short>(c.size));
                 }
                 else if(c.size<0xFFFFFFFF){
                     // array32
                     write_head_byte(byte_array32);
+                    m_itemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned int>(c.size));
                 }
                 else{
@@ -389,17 +375,20 @@ namespace msgpack {
                 if(c.size<0x0F){
                     // fixmap
                     new_item();
+                    m_itemCounts.push_back(ItemCount(c.size));
                     auto v = fixmap::bits | pairs;
                     write_value(static_cast<char>(v));
                 }
                 else if(c.size<0xFFFF){
                     // map16
                     write_head_byte(byte_map16);
+                    m_itemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned short>(pairs));
                 }
                 else if(c.size<0xFFFFFFFF){
                     // map32
                     write_head_byte(byte_map32);
+                    m_itemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned int>(pairs));
                 }
                 else{
@@ -409,18 +398,12 @@ namespace msgpack {
             else{
                 throw std::exception(__FUNCTION__);
             }
-        }
 
-        packer& end_collection()
-        {
-            m_context_stack.top().close();
-            write_collection_head(m_context_stack.top());
-
-            // copy buffer
-            auto buffer=m_context_stack.top().buffer;
-            m_context_stack.pop();
-            if(!buffer.empty()){
-                write(&buffer[0], buffer.size());
+            if(c.p){
+                assert(m_itemCounts.back().max==c.size);
+                m_itemCounts.pop_back();
+                // close collection
+				write(c.p, c.len);
             }
 
             return *this;
@@ -442,12 +425,7 @@ namespace msgpack {
 
         size_t write(const unsigned char* p, size_t len)
         {
-            if(m_context_stack.empty()){
-                return m_writer(p, len);
-            }
-            else{
-                m_context_stack.top().write(p, len);
-            }
+            return m_writer(p, len);
         }
     };
 

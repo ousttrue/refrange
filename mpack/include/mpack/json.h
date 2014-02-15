@@ -10,22 +10,21 @@ namespace json {
 
     class parser
     {
-        ::mpack::msgpack::packer &m_packer;
         reader_t &m_reader;
         int m_peek_char;
 
     public:
-        parser(::mpack::msgpack::packer &packer, reader_t &reader)
-            : m_packer(packer), m_reader(reader), m_peek_char(-1)
+        parser(reader_t &reader)
+            : m_reader(reader), m_peek_char(-1)
         {}
 
-        bool parse(bool is_key=false)
+        bool parse(::mpack::msgpack::packer &packer, bool is_key=false)
         {
             switch(peek_char(true))
             {
-                case '{': return parse_object();
-                case '[': return parse_array();
-				case '"': return parse_quated_string('"');
+                case '{': return parse_object(packer);
+                case '[': return parse_array(packer);
+				case '"': return parse_quated_string(packer, '"');
 				case '0':
 				case '1':
 				case '2':
@@ -36,7 +35,7 @@ namespace json {
 				case '7':
 				case '8':
 				case '9':
-					return parse_number();
+					return parse_number(packer);
 				default: throw std::invalid_argument(__FUNCTION__);
             }
         }
@@ -112,14 +111,15 @@ namespace json {
             return m_peek_char;
         }
 
-        bool parse_object()
+        bool parse_object(::mpack::msgpack::packer &packer)
         {
+            // nest packer
+            std::vector<unsigned char> buffer;
+            ::mpack::msgpack::vector_packer nested(buffer);
+
             // drop open brace
 			assert(m_peek_char == '{');
             get_char();
-
-            auto c=::mpack::msgpack::map();
-            m_packer << c;
 
             // search key
             for(int i=0; true; ++i){
@@ -136,23 +136,26 @@ namespace json {
                     get_char();
                 }
 
-                if(!parse(true)){
+                if(!parse(nested, true)){
                     return false;
                 }
 
 				if (get_char(true) != ':'){
                     return false;
                 }
-                if(!parse()){
+                if(!parse(nested)){
                     return false;
                 }
             }
 
-            m_packer.end_collection();
+            packer << ::mpack::msgpack::map(nested.items()/2, 
+				buffer.empty() ? 0 : &buffer[0],
+				buffer.size());
+
             return true;
         }
 
-        bool parse_array()
+        bool parse_array(::mpack::msgpack::packer &packer)
         {
             return false;
         }
@@ -198,7 +201,7 @@ namespace json {
 			return false;
 		}
 
-		bool parse_number()
+		bool parse_number(::mpack::msgpack::packer &packer)
 		{
 			std::stringstream ss;
 			for (int i = 0; true; ++i)
@@ -211,12 +214,12 @@ namespace json {
 				ss << c;
 			}
 
-			m_packer << atoi(ss.str().c_str());
+			packer << atoi(ss.str().c_str());
 
 			return true;
 		}
 
-		bool parse_quated_string(char quote)
+		bool parse_quated_string(::mpack::msgpack::packer &packer, char quote)
 		{
 			// drop first quote
 			assert(m_peek_char == quote);
@@ -232,7 +235,7 @@ namespace json {
 				ss << c;
 			}
 
-			m_packer << ss.str();
+			packer << ss.str();
 
 			return true;
 		}
