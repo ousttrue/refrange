@@ -124,21 +124,6 @@ namespace msgpack {
 		}
     };
 
-    // array
-    inline collection_context array(size_t size=0){
-        return collection_context(collection_context::collection_array, size);
-    }
-
-    // map
-    inline collection_context map(size_t size=0){
-        return collection_context(collection_context::collection_map, size*2);
-    }
-
-    inline collection_context map(size_t size, const unsigned char *p, size_t len)
-    {
-        return collection_context(collection_context::collection_map, size*2, p, len);
-    }
-
     class packer
     {
         struct ItemCount
@@ -161,12 +146,6 @@ namespace msgpack {
             : m_itemCounts(1)
         {}
         size_t items()const{ return m_itemCounts[0].current; }
-        size_t itemPairs()const{ 
-            if(m_itemCounts[0].current%2!=0){
-                throw std::invalid_argument(__FUNCTION__);
-            }
-            return m_itemCounts[0].current/2; 
-        }
         void new_item() 
         { 
             auto &top=m_itemCounts.back();
@@ -434,6 +413,21 @@ namespace msgpack {
             return m_writer(p, len);
         }
     };
+
+    // array
+    inline collection_context array(size_t size=0){
+        return collection_context(collection_context::collection_array, size);
+    }
+
+    // map
+    inline collection_context map(size_t size=0){
+        return collection_context(collection_context::collection_map, size*2);
+    }
+
+    inline collection_context map(const packer &packer, const unsigned char *p, size_t len)
+    {
+        return collection_context(collection_context::collection_map, packer.items(), p, len);
+    }
 
     // bool
     inline packer& operator<<(packer &packer, bool t) { return packer.pack_bool(t); }

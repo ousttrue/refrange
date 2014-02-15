@@ -148,7 +148,7 @@ namespace json {
                 }
             }
 
-            packer << ::mpack::msgpack::map(nested.itemPairs(), 
+            packer << ::mpack::msgpack::map(nested,
 				buffer.empty() ? 0 : &buffer[0],
 				buffer.size());
 
