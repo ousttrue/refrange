@@ -587,7 +587,7 @@ TEST(MsgpackTest, fixarray)
 
     // packing
 	mpack::msgpack::vector_packer p(buffer);
-	p << mpack::msgpack::array_context(3)
+	p << mpack::msgpack::array(3)
         << 1 << "str" << true
 		;
 
@@ -600,7 +600,7 @@ TEST(MsgpackTest, fixarray)
 	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_array());
 
-	auto c = mpack::msgpack::array_context();
+	auto c = mpack::msgpack::array();
     int n;
     std::string str;
     bool b;
@@ -622,7 +622,7 @@ TEST(MsgpackTest, array16)
 
     // packing
 	mpack::msgpack::vector_packer p(buffer);
-	p << mpack::msgpack::array_context(16)
+	p << mpack::msgpack::array(16)
         << 1 << "str1" << true << 1.5f
         << 2 << "str2" << false << 1.6f
         << 3 << "str3" << true << 1.7
@@ -639,7 +639,7 @@ TEST(MsgpackTest, array16)
     EXPECT_TRUE(u.is_array());
 
     // array
-	auto c = mpack::msgpack::array_context();
+	auto c = mpack::msgpack::array();
     u >> c ;
     EXPECT_EQ(16, c.size);
 
@@ -667,7 +667,7 @@ TEST(MsgpackTest, array32)
 
     // packing
 	mpack::msgpack::vector_packer p(buffer);
-	auto pc = mpack::msgpack::array_context(0xFFFF + 1);
+	auto pc = mpack::msgpack::array(0xFFFF + 1);
     p << pc;
     for(int i=0; i<pc.size; ++i){
         p << i;
@@ -683,7 +683,7 @@ TEST(MsgpackTest, array32)
     EXPECT_TRUE(u.is_array());
 
     // array
-	auto uc = mpack::msgpack::array_context();
+	auto uc = mpack::msgpack::array();
     u >> uc ;
     EXPECT_EQ(pc.size, uc.size);
 
@@ -704,7 +704,7 @@ TEST(MsgpackTest, fixmap)
 
     // packing
 	mpack::msgpack::vector_packer p(buffer);
-	p << mpack::msgpack::map_context(3)
+	p << mpack::msgpack::map(3)
         << "key1" << 0
         << "key2" << 1
         << "key3" << 2
@@ -719,7 +719,7 @@ TEST(MsgpackTest, fixmap)
 	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
     EXPECT_TRUE(u.is_map());
 
-	auto c = mpack::msgpack::map_context();
+	auto c = mpack::msgpack::map();
     u >> c;
     EXPECT_EQ(3, c.size);
 
@@ -744,7 +744,7 @@ TEST(MsgpackTest, map16)
 
     // packing
 	mpack::msgpack::vector_packer p(buffer);
-	p << mpack::msgpack::map_context(17)
+	p << mpack::msgpack::map(17)
         << "key1" << 0 << "key2" << 1 << "key3" << 2 << "key4" << 3
         << "key5" << 4 << "key6" << 5 << "key7" << 6 << "key8" << 7
         << "key9" << 8 << "key10" << 9 << "key11" << 10 << "key12" << 11
@@ -762,7 +762,7 @@ TEST(MsgpackTest, map16)
     EXPECT_TRUE(u.is_map());
 
     // map
-	auto c = mpack::msgpack::map_context();
+	auto c = mpack::msgpack::map();
     u >> c ;
     EXPECT_EQ(17, c.size);
 

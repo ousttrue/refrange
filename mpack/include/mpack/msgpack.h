@@ -144,11 +144,11 @@ namespace msgpack {
         }
     };
 
-    inline collection_context array_context(size_t size=0){
+    inline collection_context array(size_t size=0){
         return collection_context(collection_context::collection_array, size);
     }
 
-    inline collection_context map_context(size_t size=0){
+    inline collection_context map(size_t size=0){
         // key + value
         return collection_context(collection_context::collection_map, size*2);
     }

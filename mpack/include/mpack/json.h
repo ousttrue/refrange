@@ -118,7 +118,7 @@ namespace json {
 			assert(m_peek_char == '{');
             get_char();
 
-            auto c=::mpack::msgpack::map_context();
+            auto c=::mpack::msgpack::map();
             m_packer << c;
 
             // search key
@@ -259,7 +259,7 @@ namespace json {
             }
             else if(u.is_map()){
                 write("{");
-                auto c=::mpack::msgpack::map_context();
+                auto c=::mpack::msgpack::map();
                 u >> c;
                 for(int i=0; i<c.size; ++i){
                     std::string key;
