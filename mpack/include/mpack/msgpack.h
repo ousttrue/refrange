@@ -873,12 +873,15 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     class vector_packer: public packer
     {
-    public:
-        std::vector<unsigned char> packed_buffer;
+        std::vector<unsigned char> &m_packed_buffer;
 
-        vector_packer()
+        vector_packer(const vector_packer&);
+        vector_packer& operator=(const vector_packer&); 
+    public:
+        vector_packer(std::vector<unsigned char> &packed_buffer)
+            : m_packed_buffer(packed_buffer)
         {
-			auto buffer=&packed_buffer;
+			auto buffer=&m_packed_buffer;
             m_writer=[buffer](const unsigned char *p, size_t size)->size_t
             {
                 for(size_t i=0; i<size; ++i){

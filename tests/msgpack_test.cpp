@@ -7,10 +7,11 @@
 /// +--------+
 TEST(MsgpackTest, nil) 
 {
+	std::vector<unsigned char> buffer;
+
     // packing
-    mpack::msgpack::vector_packer p;
+    mpack::msgpack::vector_packer p(buffer);
     p.pack_nil();
-    auto &buffer=p.packed_buffer;
 
     // check
     ASSERT_EQ(1, buffer.size());
@@ -23,10 +24,11 @@ TEST(MsgpackTest, nil)
 /// +--------+
 TEST(MsgpackTest, false)
 {
+	std::vector<unsigned char> buffer;
+
     // packing
-    mpack::msgpack::vector_packer p;
+    mpack::msgpack::vector_packer p(buffer);
     p.pack_bool(false);
-    auto &buffer=p.packed_buffer;
 
     // check
     ASSERT_EQ(1, buffer.size());
@@ -39,10 +41,11 @@ TEST(MsgpackTest, false)
 /// +--------+
 TEST(MsgpackTest, true)
 {
+	std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p.pack_bool(true);
-    auto &buffer=p.packed_buffer;
 
     // check
     ASSERT_EQ(1, buffer.size());
@@ -55,10 +58,11 @@ TEST(MsgpackTest, true)
 /// +--------+
 TEST(MsgpackTest, small_int)
 {
+	std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << 1;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -78,10 +82,11 @@ TEST(MsgpackTest, small_int)
 /// +--------+
 TEST(MsgpackTest, small_negative_int)
 {
+	std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << -1;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -101,10 +106,11 @@ TEST(MsgpackTest, small_negative_int)
 /// +--------+--------+
 TEST(MsgpackTest, uint8)
 {
+	std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << 128;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -124,10 +130,11 @@ TEST(MsgpackTest, uint8)
 /// +--------+--------+--------+
 TEST(MsgpackTest, uint16)
 {
-    // packing
-	mpack::msgpack::vector_packer p;
+	std::vector<unsigned char> buffer;
+
+	// packing
+	mpack::msgpack::vector_packer p(buffer);
     p << 256;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -148,12 +155,12 @@ TEST(MsgpackTest, uint16)
 TEST(MsgpackTest, uint32)
 {
     {
+		std::vector<unsigned char> buffer;
         int value=65536;
 
         // packing
-		mpack::msgpack::vector_packer p;
+		mpack::msgpack::vector_packer p(buffer);
         p << value;
-        auto &buffer=p.packed_buffer;
         ASSERT_FALSE(buffer.empty());
 
         // check
@@ -168,12 +175,12 @@ TEST(MsgpackTest, uint32)
     }
 
     {
+		std::vector<unsigned char> buffer;
         unsigned int value=4294967295;
 
         // packing
-		mpack::msgpack::vector_packer p;
+		mpack::msgpack::vector_packer p(buffer);
         p << value;
-        auto &buffer=p.packed_buffer;
         ASSERT_FALSE(buffer.empty());
 
         // check
@@ -194,12 +201,12 @@ TEST(MsgpackTest, uint32)
 /// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 TEST(MsgpackTest, uint64)
 {
+	std::vector<unsigned char> buffer;
     unsigned long long value=4294967296;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -219,12 +226,12 @@ TEST(MsgpackTest, uint64)
 /// +--------+--------+
 TEST(MsgpackTest, int8)
 {
+	std::vector<unsigned char> buffer;
     char value=-32;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -244,12 +251,12 @@ TEST(MsgpackTest, int8)
 /// +--------+--------+--------+
 TEST(MsgpackTest, int16)
 {
+	std::vector<unsigned char> buffer;
     int value=-256;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -269,12 +276,12 @@ TEST(MsgpackTest, int16)
 /// +--------+--------+--------+--------+--------+
 TEST(MsgpackTest, int32)
 {
+	std::vector<unsigned char> buffer;
     int value=-65535;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -294,12 +301,12 @@ TEST(MsgpackTest, int32)
 /// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 TEST(MsgpackTest, int64)
 {
+	std::vector<unsigned char> buffer;
     long long value=-4294967296;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -319,12 +326,12 @@ TEST(MsgpackTest, int64)
 /// +--------+--------+--------+--------+--------+
 TEST(MsgpackTest, float32)
 {
+	std::vector<unsigned char> buffer;
     float value=1.5f;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -344,12 +351,12 @@ TEST(MsgpackTest, float32)
 /// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 TEST(MsgpackTest, float64)
 {
+	std::vector<unsigned char> buffer;
     double value=1.111111111111111111111111111111111111111111111111;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << value;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -369,12 +376,12 @@ TEST(MsgpackTest, float64)
 /// +--------+========+
 TEST(MsgpackTest, fixstr)
 {
+	std::vector<unsigned char> buffer;
     auto str="abc";
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << str;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -395,6 +402,7 @@ TEST(MsgpackTest, fixstr)
 /// +--------+--------+========+
 TEST(MsgpackTest, str8)
 {
+	std::vector<unsigned char> buffer;
     auto str=
         "0123456789"
         "0123456789"
@@ -403,9 +411,8 @@ TEST(MsgpackTest, str8)
         ;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << str;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -426,6 +433,7 @@ TEST(MsgpackTest, str8)
 /// +--------+--------+--------+========+
 TEST(MsgpackTest, str16)
 {
+	std::vector<unsigned char> buffer;
     auto str=
         "0123456789" "0123456789" "0123456789" "0123456789" "0123456789" "0123456789"
         "0123456789" "0123456789" "0123456789" "0123456789" "0123456789" "0123456789"
@@ -435,9 +443,8 @@ TEST(MsgpackTest, str16)
         ;
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << str;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -458,6 +465,7 @@ TEST(MsgpackTest, str16)
 /// +--------+--------+--------+--------+--------+========+
 TEST(MsgpackTest, str32)
 {
+	std::vector<unsigned char> buffer;
     std::string str;
     for(int i=0; i<(0xFFFF+1); ++i)
     {
@@ -465,9 +473,8 @@ TEST(MsgpackTest, str32)
     }
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << str;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -488,13 +495,14 @@ TEST(MsgpackTest, str32)
 /// +--------+--------+========+
 TEST(MsgpackTest, bin8)
 {
+    std::vector<unsigned char> buffer;
+
     std::vector<unsigned char> buf;
     buf.push_back(0);
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << buf;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -515,15 +523,16 @@ TEST(MsgpackTest, bin8)
 /// +--------+--------+--------+========+
 TEST(MsgpackTest, bin16)
 {
+    std::vector<unsigned char> buffer;
+
     std::vector<unsigned char> buf;
     for(int i=0; i<0xFF+1; ++i){
         buf.push_back(i % 0xFF);
     }
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << buf;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -544,15 +553,16 @@ TEST(MsgpackTest, bin16)
 /// +--------+--------+--------+--------+--------+========+
 TEST(MsgpackTest, bin32)
 {
+    std::vector<unsigned char> buffer;
+
     std::vector<unsigned char> buf;
     for(int i=0; i<0xFFFF+1; ++i){
         buf.push_back(i % 0xFF);
     }
 
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
     p << buf;
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -573,13 +583,14 @@ TEST(MsgpackTest, bin32)
 /// +--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, fixarray)
 {
+    std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
 	p << mpack::msgpack::array_context(3)
         << 1 << "str" << true
 		;
 
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -607,8 +618,10 @@ TEST(MsgpackTest, fixarray)
 /// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, array16)
 {
+    std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
 	p << mpack::msgpack::array_context(16)
         << 1 << "str1" << true << 1.5f
         << 2 << "str2" << false << 1.6f
@@ -616,7 +629,6 @@ TEST(MsgpackTest, array16)
         << 4 << "str4" << false << 1.8
 		;
 
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -651,15 +663,16 @@ TEST(MsgpackTest, array16)
 /// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, array32)
 {
+    std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
 	auto pc = mpack::msgpack::array_context(0xFFFF + 1);
     p << pc;
     for(int i=0; i<pc.size; ++i){
         p << i;
     }
 
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -687,15 +700,16 @@ TEST(MsgpackTest, array32)
 /// +--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, fixmap)
 {
+    std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
 	p << mpack::msgpack::map_context(3)
         << "key1" << 0
         << "key2" << 1
         << "key3" << 2
 		;
 
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
@@ -726,8 +740,10 @@ TEST(MsgpackTest, fixmap)
 /// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, map16)
 {
+    std::vector<unsigned char> buffer;
+
     // packing
-	mpack::msgpack::vector_packer p;
+	mpack::msgpack::vector_packer p(buffer);
 	p << mpack::msgpack::map_context(17)
         << "key1" << 0 << "key2" << 1 << "key3" << 2 << "key4" << 3
         << "key5" << 4 << "key6" << 5 << "key7" << 6 << "key8" << 7
@@ -736,7 +752,6 @@ TEST(MsgpackTest, map16)
         << "key17" << 16
 		;
 
-    auto &buffer=p.packed_buffer;
     ASSERT_FALSE(buffer.empty());
 
     // check
