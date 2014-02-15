@@ -161,6 +161,12 @@ namespace msgpack {
             : m_itemCounts(1)
         {}
         size_t items()const{ return m_itemCounts[0].current; }
+        size_t itemPairs()const{ 
+            if(m_itemCounts[0].current%2!=0){
+                throw std::invalid_argument(__FUNCTION__);
+            }
+            return m_itemCounts[0].current/2; 
+        }
         void new_item() 
         { 
             auto &top=m_itemCounts.back();
