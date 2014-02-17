@@ -264,7 +264,7 @@ namespace json {
                 write("{");
                 auto c=::mpack::msgpack::map();
                 u >> c;
-                for(int i=0; i<c.size; ++i){
+                for(size_t i=0; i<c.size; ++i){
                     std::string key;
                     u >> key;
                     write("\"");

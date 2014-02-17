@@ -3,4 +3,5 @@
 #include "mpack/msgpack.h"
 #include "mpack/json.h"
 #include "mpack/typestruct.h"
+#include "mpack/packedmethod.h"
 
