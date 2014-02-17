@@ -847,14 +847,14 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // utility
     //////////////////////////////////////////////////////////////////////////////
-    class vector_packer: public packer
+    class external_vector_packer: public packer
     {
         std::vector<unsigned char> &m_packed_buffer;
 
-        vector_packer(const vector_packer&);
-        vector_packer& operator=(const vector_packer&); 
+        external_vector_packer(const external_vector_packer&);
+        external_vector_packer& operator=(const external_vector_packer&); 
     public:
-        vector_packer(std::vector<unsigned char> &packed_buffer)
+        external_vector_packer(std::vector<unsigned char> &packed_buffer)
             : m_packed_buffer(packed_buffer)
         {
 			auto buffer=&m_packed_buffer;

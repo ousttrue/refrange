@@ -15,13 +15,13 @@ TEST(PackedMethod, method2to1)
 
     // pack args 
     {
-        mpack::msgpack::vector_packer args_packer(args_buffer);
+        mpack::msgpack::external_vector_packer args_packer(args_buffer);
         args_packer << 1 << 2;
     }
 
     // call method(packing result to result_packer)
     {
-        mpack::msgpack::vector_packer result_packer(result_buffer);
+        mpack::msgpack::external_vector_packer result_packer(result_buffer);
 		mpack::msgpack::memory_unpacker args_unpacker(&args_buffer[0], args_buffer.size());
         method(result_packer, args_unpacker);
     }

@@ -7,7 +7,7 @@ TEST(TypeStructTest, sample)
 	std::vector<unsigned char> buffer;
 
     // packing
-    mpack::msgpack::vector_packer p(buffer);
+    mpack::msgpack::external_vector_packer p(buffer);
     p << 1;
 
     // unpack
@@ -24,7 +24,7 @@ TEST(TypeStructTest, array)
 	std::vector<unsigned char> buffer;
 
     // packing
-    mpack::msgpack::vector_packer p(buffer);
+    mpack::msgpack::external_vector_packer p(buffer);
     p << mpack::msgpack::array(2) << 1 << 2;
 
     // unpack
@@ -41,7 +41,7 @@ TEST(TypeStructTest, vec3)
 	std::vector<unsigned char> buffer;
 
     // packing
-    mpack::msgpack::vector_packer p(buffer);
+    mpack::msgpack::external_vector_packer p(buffer);
     p << mpack::msgpack::array(3) << 1.0f << 1.0f << 1.0f;
 
     // unpack
@@ -58,7 +58,7 @@ TEST(TypeStructTest, map)
 	std::vector<unsigned char> buffer;
 
     // packing
-    mpack::msgpack::vector_packer p(buffer);
+    mpack::msgpack::external_vector_packer p(buffer);
     p << mpack::msgpack::map(1) << "key" << 1;
 
     // unpack
@@ -75,7 +75,7 @@ TEST(TypeStructTest, nest)
 	std::vector<unsigned char> buffer;
 
     // packing
-    mpack::msgpack::vector_packer p(buffer);
+    mpack::msgpack::external_vector_packer p(buffer);
     p << mpack::msgpack::map(1) 
         << "key" 
         << mpack::msgpack::array(1) 
