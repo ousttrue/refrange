@@ -12,7 +12,7 @@ TEST(JsonTest, parse)
 	auto p = ::mpack::msgpack::create_external_vector_packer(buffer);
     mpack::json::reader_t reader=[&ss](unsigned char *p, size_t len)->size_t{
         ss.read((char*)p, len);
-		return ss.gcount();
+		return static_cast<size_t>(ss.gcount());
     };
 
     mpack::json::parser parser(reader);

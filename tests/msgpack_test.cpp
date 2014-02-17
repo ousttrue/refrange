@@ -104,7 +104,7 @@ TEST(MsgpackTest, uint8)
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
-    int n=0;
+    unsigned int n=0;
     u >> n;
     EXPECT_EQ(128, n);
 }
@@ -125,7 +125,7 @@ TEST(MsgpackTest, uint16)
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
-    int n=0;
+    unsigned int n=0;
     u >> n;
     EXPECT_EQ(256, n);
 }
@@ -149,7 +149,7 @@ TEST(MsgpackTest, uint32)
 
         // unpack
 		auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
-        int n=0;
+        unsigned int n=0;
         u >> n;
         EXPECT_EQ(value, n);
     }
@@ -167,7 +167,7 @@ TEST(MsgpackTest, uint32)
 
         // unpack
 		auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
-        int n=0;
+        unsigned int n=0;
         u >> n;
         EXPECT_EQ(value, n);
     }
@@ -607,7 +607,7 @@ TEST(MsgpackTest, array32)
 	auto p=mpack::msgpack::create_vector_packer();
 	auto pc = mpack::msgpack::array(0xFFFF + 1);
     p << pc;
-    for(int i=0; i<pc.size; ++i){
+    for(size_t i=0; i<pc.size; ++i){
         p << i;
     }
 
@@ -623,7 +623,7 @@ TEST(MsgpackTest, array32)
     u >> uc ;
     EXPECT_EQ(pc.size, uc.size);
 
-    for(int i=0; i<uc.size; ++i){
+    for(size_t i=0; i<uc.size; ++i){
         int n;
         u >> n;
         EXPECT_EQ(i, n);
@@ -655,7 +655,7 @@ TEST(MsgpackTest, fixmap)
     u >> c;
     EXPECT_EQ(3, c.size);
 
-    for(int i=0; i<c.size; ++i){
+    for(size_t i=0; i<c.size; ++i){
         std::string key;
         int value;
         u >> key >> value;
@@ -694,7 +694,7 @@ TEST(MsgpackTest, map16)
     u >> c ;
     EXPECT_EQ(17, c.size);
 
-    for(int i=0; i<c.size; ++i){
+    for(size_t i=0; i<c.size; ++i){
         std::string key;
         int value;
         u >> key >> value;

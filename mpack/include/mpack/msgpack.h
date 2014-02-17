@@ -5,6 +5,7 @@
 #include <limits>
 #include <iterator>
 #include <memory>
+#include <type_traits>
 #include <assert.h>
 
 
@@ -201,7 +202,7 @@ namespace msgpack {
                     write_value(static_cast<short>(n));
                     return *this;
                 }
-                if(n>-0xffffffff){
+                if(n>-((long long)0xffffffff)){
                     // int32
                     write_head_byte(byte_int32);
                     write_value(static_cast<int>(n));
@@ -503,8 +504,7 @@ namespace msgpack {
             return *this;
         }
 
-        template<typename T>
-        unpacker& unpack_float(T &t)
+        unpacker& unpack_float(float &t)
         {
             unsigned char head_byte=read_value<unsigned char>();
 
@@ -515,12 +515,27 @@ namespace msgpack {
                     break;
 
                 case byte_float64:
-                    if(sizeof(T)<8){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-                        t=read_value<double>();
-                    }
+                    throw std::range_error(__FUNCTION__);
+
+                default:
+                    throw std::exception("not implemented. at " __FUNCTION__);
+            }
+
+            return *this;
+        }
+
+        unpacker& unpack_float(double &t)
+        {
+            unsigned char head_byte=read_value<unsigned char>();
+
+            switch(head_byte)
+            {
+                case byte_float32:
+                    t=read_value<float>();
+                    break;
+
+                case byte_float64:
+                    t=read_value<double>();
                     break;
 
                 default:
@@ -531,7 +546,7 @@ namespace msgpack {
         }
 
         template<typename T>
-        unpacker &unpack_int(T &t)
+		unpacker &unpack_int(T &t, typename std::enable_if<std::is_signed<T>::value>::type * = 0)
         {
             unsigned char head_byte=read_value<unsigned char>();
 
@@ -596,6 +611,60 @@ namespace msgpack {
                     }
                     else{
                         t=static_cast<T>(read_value<long long>());
+                    }
+                    break;
+
+                default:
+                    if(partial_bit_equal<positive_fixint>(head_byte)){
+                        t=static_cast<char>(head_byte);
+                    }
+                    else if(partial_bit_equal<negative_fixint>(head_byte)){
+                        t=-extract_head_byte<negative_fixint>(head_byte);
+                    }
+                    else{
+                        throw std::exception("not implemented. at " __FUNCTION__);
+                    }
+                    break;
+            }
+
+            return *this;
+        }
+
+        template<typename T>
+		unpacker &unpack_int(T &t, typename std::enable_if<std::is_unsigned<T>::value>::type * = 0)
+        {
+            unsigned char head_byte=read_value<unsigned char>();
+
+            switch(head_byte)
+            {
+                case byte_uint8:
+                    t=read_value<unsigned char>();
+                    break;
+
+                case byte_uint16:
+                    if(sizeof(T)<2){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        t=static_cast<T>(read_value<unsigned short>());
+                    }
+                    break;
+
+                case byte_uint32:
+                    if(sizeof(T)<4){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        t=static_cast<T>(read_value<unsigned int>());
+                    }
+                    break;
+
+                case byte_uint64:
+                    if(sizeof(T)<8){
+                        throw std::exception("range check ?");
+                    }
+                    else{
+                        t=static_cast<T>(read_value<unsigned long long>());
                     }
                     break;
 
