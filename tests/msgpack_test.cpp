@@ -7,15 +7,13 @@
 /// +--------+
 TEST(MsgpackTest, nil) 
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p.pack_nil();
 
     // check
-    ASSERT_EQ(1, buffer.size());
-    EXPECT_EQ(0xc0, buffer[0]);
+    ASSERT_EQ(1, p.size());
+    EXPECT_EQ(0xc0, *p.pointer());
 }
 
 /// false:
@@ -24,15 +22,13 @@ TEST(MsgpackTest, nil)
 /// +--------+
 TEST(MsgpackTest, false)
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p.pack_bool(false);
 
     // check
-    ASSERT_EQ(1, buffer.size());
-    EXPECT_EQ(0xc2, buffer[0]);
+    ASSERT_EQ(1, p.size());
+    EXPECT_EQ(0xc2, *p.pointer());
 }
 
 /// true:
@@ -41,15 +37,13 @@ TEST(MsgpackTest, false)
 /// +--------+
 TEST(MsgpackTest, true)
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p.pack_bool(true);
 
     // check
-    ASSERT_EQ(1, buffer.size());
-    EXPECT_EQ(0xc3, buffer[0]);
+    ASSERT_EQ(1, p.size());
+    EXPECT_EQ(0xc3, *p.pointer());
 }
 
 /// positive fixnum stores 7-bit positive integer
@@ -58,19 +52,16 @@ TEST(MsgpackTest, true)
 /// +--------+
 TEST(MsgpackTest, small_int)
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << 1;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(1, buffer.size());
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::positive_fixint>(buffer[0]));
+    ASSERT_EQ(1, p.size());
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::positive_fixint>(*p.pointer()));
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     int n=0;
     u >> n;
     EXPECT_EQ(1, n);
@@ -82,19 +73,16 @@ TEST(MsgpackTest, small_int)
 /// +--------+
 TEST(MsgpackTest, small_negative_int)
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << -1;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(1, buffer.size());
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::negative_fixint>(buffer[0]));
+    ASSERT_EQ(1, p.size());
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::negative_fixint>(*p.pointer()));
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     int n=0;
     u >> n;
     EXPECT_EQ(-1, n);
@@ -106,19 +94,16 @@ TEST(MsgpackTest, small_negative_int)
 /// +--------+--------+
 TEST(MsgpackTest, uint8)
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << 128;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(2, buffer.size());
-    EXPECT_EQ(0xcc, buffer[0]);
+    ASSERT_EQ(2, p.size());
+    EXPECT_EQ(0xcc, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     int n=0;
     u >> n;
     EXPECT_EQ(128, n);
@@ -130,19 +115,16 @@ TEST(MsgpackTest, uint8)
 /// +--------+--------+--------+
 TEST(MsgpackTest, uint16)
 {
-	std::vector<unsigned char> buffer;
-
 	// packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << 256;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(3, buffer.size());
-    EXPECT_EQ(0xcd, buffer[0]);
+    ASSERT_EQ(3, p.size());
+    EXPECT_EQ(0xcd, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     int n=0;
     u >> n;
     EXPECT_EQ(256, n);
@@ -155,40 +137,36 @@ TEST(MsgpackTest, uint16)
 TEST(MsgpackTest, uint32)
 {
     {
-		std::vector<unsigned char> buffer;
         int value=65536;
 
         // packing
-		mpack::msgpack::external_vector_packer p(buffer);
+		auto p=mpack::msgpack::vector_packer();
         p << value;
-        ASSERT_FALSE(buffer.empty());
 
         // check
-        ASSERT_EQ(5, buffer.size());
-        EXPECT_EQ(0xce, buffer[0]);
+        ASSERT_EQ(5, p.size());
+        EXPECT_EQ(0xce, *p.pointer());
 
         // unpack
-		auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+		auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
         int n=0;
         u >> n;
         EXPECT_EQ(value, n);
     }
 
     {
-		std::vector<unsigned char> buffer;
         unsigned int value=4294967295;
 
         // packing
-		mpack::msgpack::external_vector_packer p(buffer);
+		auto p=mpack::msgpack::vector_packer();
         p << value;
-        ASSERT_FALSE(buffer.empty());
 
         // check
-        ASSERT_EQ(5, buffer.size());
-        EXPECT_EQ(0xce, buffer[0]);
+        ASSERT_EQ(5, p.size());
+        EXPECT_EQ(0xce, *p.pointer());
 
         // unpack
-		auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+		auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
         int n=0;
         u >> n;
         EXPECT_EQ(value, n);
@@ -201,20 +179,18 @@ TEST(MsgpackTest, uint32)
 /// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 TEST(MsgpackTest, uint64)
 {
-	std::vector<unsigned char> buffer;
     unsigned long long value=4294967296;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(9, buffer.size());
-    EXPECT_EQ(0xcf, buffer[0]);
+    ASSERT_EQ(9, p.size());
+    EXPECT_EQ(0xcf, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     unsigned long long n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -226,20 +202,18 @@ TEST(MsgpackTest, uint64)
 /// +--------+--------+
 TEST(MsgpackTest, int8)
 {
-	std::vector<unsigned char> buffer;
     char value=-32;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(2, buffer.size());
-    EXPECT_EQ(0xd0, buffer[0]);
+    ASSERT_EQ(2, p.size());
+    EXPECT_EQ(0xd0, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     char n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -251,20 +225,18 @@ TEST(MsgpackTest, int8)
 /// +--------+--------+--------+
 TEST(MsgpackTest, int16)
 {
-	std::vector<unsigned char> buffer;
     int value=-256;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(3, buffer.size());
-    EXPECT_EQ(0xd1, buffer[0]);
+    ASSERT_EQ(3, p.size());
+    EXPECT_EQ(0xd1, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     int n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -276,20 +248,18 @@ TEST(MsgpackTest, int16)
 /// +--------+--------+--------+--------+--------+
 TEST(MsgpackTest, int32)
 {
-	std::vector<unsigned char> buffer;
     int value=-65535;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(5, buffer.size());
-    EXPECT_EQ(0xd2, buffer[0]);
+    ASSERT_EQ(5, p.size());
+    EXPECT_EQ(0xd2, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     int n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -301,20 +271,18 @@ TEST(MsgpackTest, int32)
 /// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 TEST(MsgpackTest, int64)
 {
-	std::vector<unsigned char> buffer;
     long long value=-4294967296;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(9, buffer.size());
-    EXPECT_EQ(0xd3, buffer[0]);
+    ASSERT_EQ(9, p.size());
+    EXPECT_EQ(0xd3, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     long long n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -326,20 +294,18 @@ TEST(MsgpackTest, int64)
 /// +--------+--------+--------+--------+--------+
 TEST(MsgpackTest, float32)
 {
-	std::vector<unsigned char> buffer;
     float value=1.5f;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(5, buffer.size());
-    EXPECT_EQ(0xca, buffer[0]);
+    ASSERT_EQ(5, p.size());
+    EXPECT_EQ(0xca, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     float n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -351,20 +317,18 @@ TEST(MsgpackTest, float32)
 /// +--------+--------+--------+--------+--------+--------+--------+--------+--------+
 TEST(MsgpackTest, float64)
 {
-	std::vector<unsigned char> buffer;
     double value=1.111111111111111111111111111111111111111111111111;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << value;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(9, buffer.size());
-    EXPECT_EQ(0xcb, buffer[0]);
+    ASSERT_EQ(9, p.size());
+    EXPECT_EQ(0xcb, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     double n=0;
     u >> n;
     EXPECT_EQ(value, n);
@@ -376,20 +340,18 @@ TEST(MsgpackTest, float64)
 /// +--------+========+
 TEST(MsgpackTest, fixstr)
 {
-	std::vector<unsigned char> buffer;
     auto str="abc";
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << str;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(1+3, buffer.size());
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixstr>(buffer[0]));
+    ASSERT_EQ(1+3, p.size());
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixstr>(*p.pointer()));
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::string out;
     u >> out;
 
@@ -402,7 +364,6 @@ TEST(MsgpackTest, fixstr)
 /// +--------+--------+========+
 TEST(MsgpackTest, str8)
 {
-	std::vector<unsigned char> buffer;
     auto str=
         "0123456789"
         "0123456789"
@@ -411,16 +372,15 @@ TEST(MsgpackTest, str8)
         ;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << str;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(2+32, buffer.size());
-    EXPECT_EQ(0xd9, buffer[0]);
+    ASSERT_EQ(2+32, p.size());
+    EXPECT_EQ(0xd9, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::string out;
     u >> out;
 
@@ -433,7 +393,6 @@ TEST(MsgpackTest, str8)
 /// +--------+--------+--------+========+
 TEST(MsgpackTest, str16)
 {
-	std::vector<unsigned char> buffer;
     auto str=
         "0123456789" "0123456789" "0123456789" "0123456789" "0123456789" "0123456789"
         "0123456789" "0123456789" "0123456789" "0123456789" "0123456789" "0123456789"
@@ -443,16 +402,15 @@ TEST(MsgpackTest, str16)
         ;
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << str;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(3+256, buffer.size());
-    EXPECT_EQ(0xda, buffer[0]);
+    ASSERT_EQ(3+256, p.size());
+    EXPECT_EQ(0xda, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::string out;
     u >> out;
 
@@ -465,7 +423,6 @@ TEST(MsgpackTest, str16)
 /// +--------+--------+--------+--------+--------+========+
 TEST(MsgpackTest, str32)
 {
-	std::vector<unsigned char> buffer;
     std::string str;
     for(int i=0; i<(0xFFFF+1); ++i)
     {
@@ -473,16 +430,15 @@ TEST(MsgpackTest, str32)
     }
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << str;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(5+0xFFFF+1, buffer.size());
-    EXPECT_EQ(0xdb, buffer[0]);
+    ASSERT_EQ(5+0xFFFF+1, p.size());
+    EXPECT_EQ(0xdb, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::string out;
     u >> out;
 
@@ -495,22 +451,19 @@ TEST(MsgpackTest, str32)
 /// +--------+--------+========+
 TEST(MsgpackTest, bin8)
 {
-    std::vector<unsigned char> buffer;
-
     std::vector<unsigned char> buf;
     buf.push_back(0);
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << buf;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(2+1, buffer.size());
-    EXPECT_EQ(0xc4, buffer[0]);
+    ASSERT_EQ(2+1, p.size());
+    EXPECT_EQ(0xc4, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::vector<unsigned char> out;
     u >> out;
 
@@ -523,24 +476,21 @@ TEST(MsgpackTest, bin8)
 /// +--------+--------+--------+========+
 TEST(MsgpackTest, bin16)
 {
-    std::vector<unsigned char> buffer;
-
     std::vector<unsigned char> buf;
     for(int i=0; i<0xFF+1; ++i){
         buf.push_back(i % 0xFF);
     }
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << buf;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(3+0xFF+1, buffer.size());
-    EXPECT_EQ(0xc5, buffer[0]);
+    ASSERT_EQ(3+0xFF+1, p.size());
+    EXPECT_EQ(0xc5, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::vector<unsigned char> out;
     u >> out;
 
@@ -553,24 +503,21 @@ TEST(MsgpackTest, bin16)
 /// +--------+--------+--------+--------+--------+========+
 TEST(MsgpackTest, bin32)
 {
-    std::vector<unsigned char> buffer;
-
     std::vector<unsigned char> buf;
     for(int i=0; i<0xFFFF+1; ++i){
         buf.push_back(i % 0xFF);
     }
 
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
     p << buf;
-    ASSERT_FALSE(buffer.empty());
 
     // check
-    ASSERT_EQ(5+0xFFFF+1, buffer.size());
-    EXPECT_EQ(0xc6, buffer[0]);
+    ASSERT_EQ(5+0xFFFF+1, p.size());
+    EXPECT_EQ(0xc6, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     std::vector<unsigned char> out;
     u >> out;
 
@@ -583,21 +530,18 @@ TEST(MsgpackTest, bin32)
 /// +--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, fixarray)
 {
-    std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
 	p << mpack::msgpack::array(3)
         << 1 << "str" << true
 		;
 
-    ASSERT_FALSE(buffer.empty());
 
     // check
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixarray>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixarray>(*p.pointer()));
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_array());
 
 	auto c = mpack::msgpack::array();
@@ -618,10 +562,8 @@ TEST(MsgpackTest, fixarray)
 /// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, array16)
 {
-    std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
 	p << mpack::msgpack::array(16)
         << 1 << "str1" << true << 1.5f
         << 2 << "str2" << false << 1.6f
@@ -629,13 +571,11 @@ TEST(MsgpackTest, array16)
         << 4 << "str4" << false << 1.8
 		;
 
-    ASSERT_FALSE(buffer.empty());
-
     // check
-    EXPECT_EQ(0xdc, buffer[0]);
+    EXPECT_EQ(0xdc, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_array());
 
     // array
@@ -663,23 +603,19 @@ TEST(MsgpackTest, array16)
 /// +--------+--------+--------+--------+--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, array32)
 {
-    std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
 	auto pc = mpack::msgpack::array(0xFFFF + 1);
     p << pc;
     for(int i=0; i<pc.size; ++i){
         p << i;
     }
 
-    ASSERT_FALSE(buffer.empty());
-
     // check
-    EXPECT_EQ(0xdd, buffer[0]);
+    EXPECT_EQ(0xdd, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_array());
 
     // array
@@ -700,23 +636,19 @@ TEST(MsgpackTest, array32)
 /// +--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, fixmap)
 {
-    std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
 	p << mpack::msgpack::map(3)
         << "key1" << 0
         << "key2" << 1
         << "key3" << 2
 		;
 
-    ASSERT_FALSE(buffer.empty());
-
     // check
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixmap>(buffer[0]));
+	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixmap>(*p.pointer()));
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_map());
 
 	auto c = mpack::msgpack::map();
@@ -740,10 +672,8 @@ TEST(MsgpackTest, fixmap)
 /// +--------+--------+--------+~~~~~~~~~~~~~~~~~+
 TEST(MsgpackTest, map16)
 {
-    std::vector<unsigned char> buffer;
-
     // packing
-	mpack::msgpack::external_vector_packer p(buffer);
+	auto p=mpack::msgpack::vector_packer();
 	p << mpack::msgpack::map(17)
         << "key1" << 0 << "key2" << 1 << "key3" << 2 << "key4" << 3
         << "key5" << 4 << "key6" << 5 << "key7" << 6 << "key8" << 7
@@ -752,13 +682,11 @@ TEST(MsgpackTest, map16)
         << "key17" << 16
 		;
 
-    ASSERT_FALSE(buffer.empty());
-
     // check
-    EXPECT_EQ(0xde, buffer[0]);
+    EXPECT_EQ(0xde, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_map());
 
     // map
@@ -794,14 +722,11 @@ TEST(MsgpackTest, map32)
         p << ss.str() << i;
     }
 
-    auto &buffer=p.packed_buffer;
-    ASSERT_FALSE(buffer.empty());
-
     // check
-    EXPECT_EQ(0xdf, buffer[0]);
+    EXPECT_EQ(0xdf, *p.pointer());
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_map());
 
     // map

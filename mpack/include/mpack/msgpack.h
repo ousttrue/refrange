@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <limits>
 #include <iterator>
+#include <memory>
 #include <assert.h>
 
 
@@ -90,8 +91,6 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // packer
     //////////////////////////////////////////////////////////////////////////////
-    typedef std::function<size_t(const unsigned char*, size_t)> writer_t;
-
     struct collection_context
     {
         enum collection_t
@@ -124,6 +123,10 @@ namespace msgpack {
 		}
     };
 
+
+    typedef std::function<size_t(const unsigned char*, size_t)> writer_t;
+    typedef std::function<const unsigned char*(void)> getpointer_t;
+    typedef std::function<size_t(void)> getsize_t;
     class packer
     {
         struct ItemCount
@@ -137,24 +140,30 @@ namespace msgpack {
                 : current(0), max(_max)
             {}
         };
-        std::vector<ItemCount> m_itemCounts;
+        std::vector<ItemCount> m_nestItemCounts;
 
-    public:
         writer_t m_writer;
+        getpointer_t m_getpointer;
+        getsize_t m_getsize;
+    public:
 
-        packer()
-            : m_itemCounts(1)
+        packer(const writer_t &writer, const getpointer_t &getpointer, const getsize_t &getsize)
+            : m_writer(writer), m_getpointer(getpointer), m_getsize(getsize)
+              , m_nestItemCounts(1)
         {}
-        size_t items()const{ return m_itemCounts[0].current; }
+        const unsigned char* pointer()const{ return m_getpointer(); }
+        size_t size()const{ return m_getsize(); }
+
+        size_t items()const{ return m_nestItemCounts[0].current; }
         void new_item() 
         { 
-            auto &top=m_itemCounts.back();
+            auto &top=m_nestItemCounts.back();
             ++top.current;
-            if(m_itemCounts.size()>1 && top.current==top.max){
+            if(m_nestItemCounts.size()>1 && top.current==top.max){
                 // close collection
-                m_itemCounts.pop_back();
+                m_nestItemCounts.pop_back();
             }
-            assert(!m_itemCounts.empty());
+            assert(!m_nestItemCounts.empty());
         }
 
         packer& pack_nil()
@@ -334,20 +343,20 @@ namespace msgpack {
                 if(c.size<0x0F){
                     // fixarray
                     new_item();
-                    m_itemCounts.push_back(ItemCount(c.size));
+                    m_nestItemCounts.push_back(ItemCount(c.size));
                     auto v = fixarray::bits | c.size;
                     write_value(static_cast<char>(v));
                 }
                 else if(c.size<0xFFFF){
                     // array16
                     write_head_byte(byte_array16);
-                    m_itemCounts.push_back(ItemCount(c.size));
+                    m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned short>(c.size));
                 }
                 else if(c.size<0xFFFFFFFF){
                     // array32
                     write_head_byte(byte_array32);
-                    m_itemCounts.push_back(ItemCount(c.size));
+                    m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned int>(c.size));
                 }
                 else{
@@ -360,20 +369,20 @@ namespace msgpack {
                 if(c.size<0x0F){
                     // fixmap
                     new_item();
-                    m_itemCounts.push_back(ItemCount(c.size));
+                    m_nestItemCounts.push_back(ItemCount(c.size));
                     auto v = fixmap::bits | pairs;
                     write_value(static_cast<char>(v));
                 }
                 else if(c.size<0xFFFF){
                     // map16
                     write_head_byte(byte_map16);
-                    m_itemCounts.push_back(ItemCount(c.size));
+                    m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned short>(pairs));
                 }
                 else if(c.size<0xFFFFFFFF){
                     // map32
                     write_head_byte(byte_map32);
-                    m_itemCounts.push_back(ItemCount(c.size));
+                    m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned int>(pairs));
                 }
                 else{
@@ -385,8 +394,8 @@ namespace msgpack {
             }
 
             if(c.p){
-                assert(m_itemCounts.back().max==c.size);
-                m_itemCounts.pop_back();
+                assert(m_nestItemCounts.back().max==c.size);
+                m_nestItemCounts.pop_back();
                 // close collection
 				write(c.p, c.len);
             }
@@ -847,26 +856,43 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // utility
     //////////////////////////////////////////////////////////////////////////////
-    class external_vector_packer: public packer
+    inline packer external_vector_packer(std::vector<unsigned char> &packed_buffer)
     {
-        std::vector<unsigned char> &m_packed_buffer;
-
-        external_vector_packer(const external_vector_packer&);
-        external_vector_packer& operator=(const external_vector_packer&); 
-    public:
-        external_vector_packer(std::vector<unsigned char> &packed_buffer)
-            : m_packed_buffer(packed_buffer)
+        auto buffer=&packed_buffer;
+        auto writer=[buffer](const unsigned char *p, size_t size)->size_t
         {
-			auto buffer=&m_packed_buffer;
-            m_writer=[buffer](const unsigned char *p, size_t size)->size_t
-            {
-                for(size_t i=0; i<size; ++i){
-                    buffer->push_back(*p++);
-                }
-                return size;
-            };
-        }
-    };
+            for(size_t i=0; i<size; ++i){
+                buffer->push_back(*p++);
+            }
+            return size;
+        };
+        auto pointer=[buffer]()->const unsigned char *{
+            return buffer->empty() ? 0 : &((*buffer)[0]);
+        };
+        auto size=[buffer]()->size_t{
+            return buffer->size();
+        };
+        return packer(writer, pointer, size);
+    }
+
+    inline packer vector_packer()
+    {
+        auto buffer=std::make_shared<std::vector<unsigned char>>();
+        auto writer=[buffer](const unsigned char *p, size_t size)->size_t
+        {
+            for(size_t i=0; i<size; ++i){
+                buffer->push_back(*p++);
+            }
+            return size;
+        };
+        auto pointer=[buffer]()->const unsigned char *{
+            return buffer->empty() ? 0 : &((*buffer)[0]);
+        };
+        auto size=[buffer]()->size_t{
+            return buffer->size();
+        };
+        return packer(writer, pointer, size);
+    }
 
     class memory_unpacker: public unpacker
     {

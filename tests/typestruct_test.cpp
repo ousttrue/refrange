@@ -4,14 +4,12 @@
 
 TEST(TypeStructTest, sample) 
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p << 1;
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -21,14 +19,12 @@ TEST(TypeStructTest, sample)
 
 TEST(TypeStructTest, array) 
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p << mpack::msgpack::array(2) << 1 << 2;
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -38,14 +34,12 @@ TEST(TypeStructTest, array)
 
 TEST(TypeStructTest, vec3) 
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p << mpack::msgpack::array(3) << 1.0f << 1.0f << 1.0f;
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -55,14 +49,12 @@ TEST(TypeStructTest, vec3)
 
 TEST(TypeStructTest, map) 
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p << mpack::msgpack::map(1) << "key" << 1;
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -72,17 +64,15 @@ TEST(TypeStructTest, map)
 
 TEST(TypeStructTest, nest) 
 {
-	std::vector<unsigned char> buffer;
-
     // packing
-    mpack::msgpack::external_vector_packer p(buffer);
+    auto p=mpack::msgpack::vector_packer();
     p << mpack::msgpack::map(1) 
         << "key" 
         << mpack::msgpack::array(1) 
         << 1;
 
     // unpack
-	auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+	auto u = mpack::msgpack::memory_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
