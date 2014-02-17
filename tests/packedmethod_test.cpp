@@ -9,7 +9,7 @@ static int add(int a, int b)
 TEST(PackedMethod, method2to1) 
 {
     // wrap static function pointer
-    auto method=mpack::msgpack::packmethod(std::function<int(int,int)>(add));
+    auto method=mpack::msgpack::packmethod(add);
 
     // pack args 
     auto args_packer=mpack::msgpack::create_vector_packer();
