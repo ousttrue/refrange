@@ -476,13 +476,13 @@ namespace msgpack {
 
     class unpacker
     {
-    public:
         reader_t m_reader;
         // 0-255 (-1 is invalid)
         int m_peek_byte;
+    public:
 
-        unpacker()
-            : m_peek_byte(-1)
+        unpacker(const reader_t &reader)
+            : m_reader(reader), m_peek_byte(-1)
         {}
 
         unsigned char peek_byte()
@@ -856,7 +856,7 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // utility
     //////////////////////////////////////////////////////////////////////////////
-    inline packer external_vector_packer(std::vector<unsigned char> &packed_buffer)
+    inline packer create_external_vector_packer(std::vector<unsigned char> &packed_buffer)
     {
         auto buffer=&packed_buffer;
         auto writer=[buffer](const unsigned char *p, size_t size)->size_t
@@ -875,7 +875,7 @@ namespace msgpack {
         return packer(writer, pointer, size);
     }
 
-    inline packer vector_packer()
+    inline packer create_vector_packer()
     {
         auto buffer=std::make_shared<std::vector<unsigned char>>();
         auto writer=[buffer](const unsigned char *p, size_t size)->size_t
@@ -894,30 +894,37 @@ namespace msgpack {
         return packer(writer, pointer, size);
     }
 
-    class memory_unpacker: public unpacker
+    struct memory_unpacker
     {
         const unsigned char *m_begin;
         const unsigned char *m_p;
         size_t m_size;
 
-    public:
         memory_unpacker(const unsigned char *begin, size_t size)
             : m_begin(begin), m_p(m_begin), m_size(size)
         {
-            auto self=this;
-            m_reader=[self](unsigned char *p, size_t size)->size_t
-            {
-                return self->read(p, size);
-            };
         }
 
         size_t read(unsigned char *p, size_t size)
         {
-            // todo: boundary check
+            if(m_p+size>m_begin+m_size){
+                throw std::range_error(__FUNCTION__);
+            }
+
             std::copy(m_p, m_p+size, p);
-			m_p+=size;
+            m_p+=size;
             return size;
         }
+    };
+
+    inline unpacker create_memory_unpacker(const unsigned char *begin, size_t end)
+    {
+        auto context=std::make_shared<memory_unpacker>(begin, end);
+        auto reader=[context](unsigned char *p, size_t size)->size_t
+        {
+            return context->read(p, size);
+        };
+        return unpacker(reader);
     };
 
 } // namespace

@@ -9,7 +9,7 @@ TEST(JsonTest, parse)
     const char *json_object="{\"key\":1}";
     std::istringstream ss(json_object);
 	std::vector<unsigned char> buffer;
-	auto p = ::mpack::msgpack::external_vector_packer(buffer);
+	auto p = ::mpack::msgpack::create_external_vector_packer(buffer);
     mpack::json::reader_t reader=[&ss](unsigned char *p, size_t len)->size_t{
         ss.read((char*)p, len);
 		return ss.gcount();
@@ -20,7 +20,7 @@ TEST(JsonTest, parse)
 
     // msgpack to json
     {
-        auto u = mpack::msgpack::memory_unpacker(&buffer[0], buffer.size());
+        auto u = mpack::msgpack::create_memory_unpacker(&buffer[0], buffer.size());
 
         std::string out;
         mpack::json::writer_t writer=[&out](const unsigned char *p, size_t len)->size_t{
