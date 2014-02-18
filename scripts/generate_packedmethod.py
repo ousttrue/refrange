@@ -11,7 +11,7 @@ TEMPLATE_SRC="""
 //////////////////////////////////////////////////////////////////////////////
 // build packed method call
 template<typename F, typename R$comma $template_args>
-    packedmethod pack_internal(F &f)
+    inline packedmethod pack_internal(F &f)
     {
         return [f](packer &p, unpacker &u){
             // check args
@@ -38,7 +38,7 @@ $unpack_args
 
 // for function pointer
 template<typename R$comma $template_args>
-    packedmethod packmethod(R(*f)($types))
+    inline packedmethod packmethod(R(*f)($types))
     {
         typedef R(*F)($types);
         return pack_internal<F, R$comma $types>(f);
@@ -46,13 +46,60 @@ template<typename R$comma $template_args>
 
 // extract arguments and return
 template<typename F, typename C, typename R$comma $template_args>
-    packedmethod pack_functor(F &f, R(C::*)($types)const)
+    inline packedmethod pack_functor(F &f, R(C::*)($types)const)
     {
         return pack_internal<F, R$comma $types>(f);
     }
 
 """
 TEMPLATE=Template(TEMPLATE_SRC)
+
+VOID_TEMPLATE_SRC="""
+//////////////////////////////////////////////////////////////////////////////
+// void $argc args
+//////////////////////////////////////////////////////////////////////////////
+// build packed method call
+template<typename F$comma $template_args>
+    inline packedmethod pack_void_internal(F &f)
+    {
+        return [f](packer &p, unpacker &u){
+            // check args
+            if(!u.is_array()){
+                // todo
+                throw std::exception(__FUNCTION__);
+            }
+
+            auto c=array();
+            u >> c;
+            if(c.size!=$argc){
+                // todo
+                throw std::exception(__FUNCTION__);
+            }
+
+            // unpack args
+$unpack_args
+            // call
+            f($args);
+        };
+    }
+
+// for function pointer
+template<$template_args>
+    inline packedmethod packmethod(void(*f)($types))
+    {
+        typedef void(*F)($types);
+        return pack_void_internal<F$comma $types>(f);
+    }
+
+// extract arguments and return
+template<typename F, typename C$comma $template_args>
+    inline packedmethod pack_functor(F &f, void(C::*)($types)const)
+    {
+        return pack_void_internal<F$comma $types>(f);
+    }
+
+"""
+VOID_TEMPLATE=Template(VOID_TEMPLATE_SRC)
 
 
 if __name__=="__main__":
@@ -80,8 +127,14 @@ namespace msgpack {
                 })
 
     for i in range(10):
-        pass
-
+        print VOID_TEMPLATE.substitute({
+                "argc": i,
+                "comma": "" if i==0 else ",",
+                "args": ", ".join(["a%d" % n for n in range(i)]),
+                "types": ", ".join(["A%d" % n for n in range(i)]),
+                "template_args": ", ".join(["typename A%d" % n for n in range(i)]),
+                "unpack_args": "".join(["A%d a%d; u >> a%d;\n" % (n, n, n) for n in range(i)])
+                })
 
     print """
 
