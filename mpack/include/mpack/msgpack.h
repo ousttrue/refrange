@@ -1029,15 +1029,25 @@ namespace msgpack {
         }
     };
 
-    inline unpacker create_memory_unpacker(const unsigned char *begin, size_t end)
+    inline unpacker create_memory_unpacker(const unsigned char *begin, size_t len)
     {
-        auto context=std::make_shared<memory_unpacker>(begin, end);
+        auto context=std::make_shared<memory_unpacker>(begin, len);
         auto reader=[context](unsigned char *p, size_t size)->size_t
         {
             return context->read(p, size);
         };
         return unpacker(reader);
     };
+
+    inline unpacker create_unpacker_from_packer(packer &packer)
+    {
+        auto context=std::make_shared<memory_unpacker>(packer.pointer(), packer.size());
+        auto reader=[context](unsigned char *p, size_t size)->size_t
+        {
+            return context->read(p, size);
+        };
+        return unpacker(reader);
+    }
 
 } // namespace
 } // namespace
