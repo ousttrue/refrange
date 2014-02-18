@@ -30,7 +30,8 @@ TEST(RPC, fp_2to1)
     // call
     std::vector<unsigned char> response_message;
     auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
-    d.dispatch(response_packer, request_packer.pointer(), request_packer.size());
+    d.dispatch(response_packer, 
+		mpack::msgpack::create_unpacker_from_packer(request_packer));
     //////////////////////////////////////////////////////////////////////
 
     // unpack result

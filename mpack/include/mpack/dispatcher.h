@@ -18,11 +18,18 @@ public:
     {
     }
 
+    /*
     void dispatch(packer &response, 
             const unsigned char *request, size_t len)
     {
         // unpack request
         auto u=create_memory_unpacker(request, len);
+        dispatch(response, u);
+    }
+    */
+
+    void dispatch(packer &response, unpacker &u)
+    {
         if(!u.is_array()){
             throw std::exception(__FUNCTION__);
         }

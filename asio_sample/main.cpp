@@ -8,6 +8,7 @@ class rpc_connection
 {
     boost::asio::ip::tcp::socket m_socket;
     unsigned char m_read_buffer[1024];
+    std::vector<unsigned char> m_unpack_buffer;
     std::shared_ptr<mpack::msgpack::rpc::dispatcher> m_dispatcher;
 
     int m_request_id;
@@ -58,17 +59,34 @@ public:
 
             std::cout << "read: " << bytes_transferred << std::endl;
 
-            /*
-            enqueue(m_read_buffer, bytes_transferred);
-            while(true)
-            {
-                auto message=dequeue;
-                m_dispatcher.message;
+			/*
+            std::copy(self->m_read_buffer, self->m_read_buffer+bytes_transferred, std::back_inserter(self->m_unpack_buffer));
+            if(!self->m_unpack_buffer.empty()){
+                auto unpacker=mpack::msgpack::create_memory_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
+                while(true)
+                {
+                    try {
+                        auto message=unpacker.unpack_a_message();
+                    }
+                    catch(std::exception &ex)
+                    {
+                        std::cerr << ex.what() << std::endl;
+                        break;
+                    }
+
+                    // call
+                    std::vector<unsigned char> response_message;
+                    auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
+                    self->m_dispatcher.dispatch(response_packer, message);
+
+                    // send response
+                    begin_write(response_packer.pointer(), response_packer.size());
+                }
             }
-            */
+			*/
 
             // next
-            //self->begin_read();
+            self->begin_read();
         };
 
         m_socket.async_read_some(boost::asio::buffer(m_read_buffer, 1024), handle_read);

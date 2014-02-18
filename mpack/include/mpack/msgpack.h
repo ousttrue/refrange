@@ -514,6 +514,10 @@ namespace msgpack {
             return m_peek_byte;
         }
 
+        void unpack(writer_t writer)
+        {
+        }
+
         unpacker& unpack_nil()
         {
             assert(is_nil());
