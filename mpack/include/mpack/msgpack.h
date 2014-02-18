@@ -514,8 +514,19 @@ namespace msgpack {
             return m_peek_byte;
         }
 
-        void unpack(writer_t writer)
+        byte_type read_head_byte()
         {
+            return static_cast<byte_type>(read_value<unsigned char>());
+        }
+
+        unpacker& unpack(writer_t writer)
+        {
+            auto head_byte=read_head_byte();
+            switch(head_byte)
+            {
+            }
+
+            return *this;
         }
 
         unpacker& unpack_nil()
@@ -528,7 +539,7 @@ namespace msgpack {
 
         unpacker& unpack_bool(bool &t)
         {
-            unsigned char head_byte=read_value<unsigned char>();
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_true:
@@ -547,8 +558,7 @@ namespace msgpack {
 
         unpacker& unpack_float(float &t)
         {
-            unsigned char head_byte=read_value<unsigned char>();
-
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_float32:
@@ -567,8 +577,7 @@ namespace msgpack {
 
         unpacker& unpack_float(double &t)
         {
-            unsigned char head_byte=read_value<unsigned char>();
-
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_float32:
@@ -589,8 +598,7 @@ namespace msgpack {
         template<typename T>
 		unpacker &unpack_int(T &t, typename std::enable_if<std::is_signed<T>::value>::type * = 0)
         {
-            unsigned char head_byte=read_value<unsigned char>();
-
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_uint8:
@@ -674,8 +682,7 @@ namespace msgpack {
         template<typename T>
 		unpacker &unpack_int(T &t, typename std::enable_if<std::is_unsigned<T>::value>::type * = 0)
         {
-            unsigned char head_byte=read_value<unsigned char>();
-
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_uint8:
@@ -727,8 +734,7 @@ namespace msgpack {
 
         unpacker& unpack_string(std::string &s)
         {
-            unsigned char head_byte=read_value<unsigned char>();
-
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_str8:
@@ -780,8 +786,7 @@ namespace msgpack {
 
         unpacker& unpack_bin(std::vector<unsigned char> &b)
         {
-            unsigned char head_byte=read_value<unsigned char>();
-
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_bin8:
@@ -872,7 +877,7 @@ namespace msgpack {
 
         unpacker &unpack_collection(collection_context &c)
         {
-            auto head_byte=read_value<unsigned char>();
+            auto head_byte=read_head_byte();
             switch(head_byte)
             {
                 case byte_array16:
