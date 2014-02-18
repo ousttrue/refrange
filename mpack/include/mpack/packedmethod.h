@@ -12,6 +12,19 @@ namespace msgpack {
         packedmethod pack_internal(F &f)
         {
             return [f](packer &p, unpacker &u){
+                // check args
+                if(!u.is_array()){
+                    // todo
+                    throw std::exception(__FUNCTION__);
+                }
+
+                auto c=array();
+                u >> c;
+                if(c.size!=2){
+                    // todo
+                    throw std::exception(__FUNCTION__);
+                }
+
                 // unpack args
                 A1 a1; A2 a2;
                 u >> a1 >> a2;

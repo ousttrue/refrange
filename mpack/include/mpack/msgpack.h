@@ -88,6 +88,9 @@ namespace msgpack {
         byte_map32=0xdf,
     };
 
+    enum nil_t {
+        nil
+    };
 
     //////////////////////////////////////////////////////////////////////////////
     // packer
@@ -404,7 +407,7 @@ namespace msgpack {
             return *this;
         }
 
-    private:
+//private:
         void write_head_byte(byte_type head_byte)
         {
             new_item();
@@ -428,16 +431,30 @@ namespace msgpack {
     inline collection_context array(size_t size=0){
         return collection_context(collection_context::collection_array, size);
     }
+    inline collection_context array(const packer &packer)
+    {
+        return collection_context(collection_context::collection_array, 
+                packer.items(), packer.pointer(), packer.size());
+    }
 
     // map
     inline collection_context map(size_t size=0){
         return collection_context(collection_context::collection_map, size*2);
     }
-
-    inline collection_context map(const packer &packer, const unsigned char *p, size_t len)
+    inline collection_context map(const packer &packer)
     {
-        return collection_context(collection_context::collection_map, packer.items(), p, len);
+        return collection_context(collection_context::collection_map, 
+                packer.items(), packer.pointer(), packer.size());
     }
+
+    // packer
+    inline packer& operator<<(packer &p, packer &join) { 
+        p.write(join.pointer(), join.size());
+        return p;
+    }
+
+    // nil
+    inline packer& operator<<(packer &packer, nil_t nil) { return packer.pack_nil(); }
 
     // bool
     inline packer& operator<<(packer &packer, bool t) { return packer.pack_bool(t); }
@@ -497,10 +514,30 @@ namespace msgpack {
             return m_peek_byte;
         }
 
+        unpacker& unpack_nil()
+        {
+            assert(is_nil());
+            // drop a byte
+            read_value<unsigned char>();
+			return *this;
+        }
+
         unpacker& unpack_bool(bool &t)
         {
             unsigned char head_byte=read_value<unsigned char>();
-            t=(head_byte==byte_true);
+            switch(head_byte)
+            {
+                case byte_true:
+                    t=true;
+                    break;
+
+                case byte_false:
+                    t=false;
+                    break;
+
+                default:
+                    throw std::invalid_argument(__FUNCTION__);
+            }
             return *this;
         }
 
@@ -778,6 +815,12 @@ namespace msgpack {
             }
 
             return *this;
+        }
+
+        bool is_nil()
+        {
+            auto head_byte=peek_byte();
+            return head_byte==byte_nil; 
         }
 
         bool is_array()

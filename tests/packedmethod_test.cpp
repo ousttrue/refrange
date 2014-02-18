@@ -10,11 +10,10 @@ TEST(PackedMethod, fp_2to1)
 {
     // wrap static function pointer
     auto method=mpack::msgpack::packmethod(add);
-    auto add_lambda=[](int a, int b){ return a+b; };
 
     // pack args 
     auto args_packer=mpack::msgpack::create_vector_packer();
-    args_packer << 1 << 2;
+    args_packer << mpack::msgpack::array(2) << 1 << 2;
 
     // call method(packing result to result_packer)
     auto result_packer=mpack::msgpack::create_vector_packer();
@@ -35,7 +34,7 @@ TEST(PackedMethod, lambda_2to1)
 
     // pack args 
     auto args_packer=mpack::msgpack::create_vector_packer();
-    args_packer << 1 << 2;
+    args_packer << mpack::msgpack::array(2) << 1 << 2;
 
     // call method(packing result to result_packer)
     auto result_packer=mpack::msgpack::create_vector_packer();

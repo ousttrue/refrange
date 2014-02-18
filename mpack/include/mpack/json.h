@@ -114,8 +114,7 @@ namespace json {
         bool parse_object(::mpack::msgpack::packer &packer)
         {
             // nest packer
-            std::vector<unsigned char> buffer;
-			auto nested = ::mpack::msgpack::create_external_vector_packer(buffer);
+			auto nested = ::mpack::msgpack::create_vector_packer();
 
             // drop open brace
 			assert(m_peek_char == '{');
@@ -148,9 +147,7 @@ namespace json {
                 }
             }
 
-            packer << ::mpack::msgpack::map(nested,
-				buffer.empty() ? 0 : &buffer[0],
-				buffer.size());
+            packer << ::mpack::msgpack::map(nested);
 
             return true;
         }
