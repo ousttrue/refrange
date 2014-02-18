@@ -9,6 +9,7 @@
 
 namespace mpack {
 namespace msgpack {
+namespace rpc {
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1029,6 +1030,7 @@ template<typename F>
         return pack_functor(f, &F::operator());
     }
 
+} // namespace
 } // namespace
 } // namespace
 

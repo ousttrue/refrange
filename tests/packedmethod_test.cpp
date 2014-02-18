@@ -21,7 +21,7 @@ static int bin(int a, int b)
 TEST(PackedMethod, fp_0to1) 
 {
     // wrap static function pointer
-    auto method=mpack::msgpack::packmethod(zero);
+    auto method=mpack::msgpack::rpc::packmethod(zero);
 
     // call method(packing result to result_packer)
     auto result_packer=mpack::msgpack::create_vector_packer();
@@ -41,7 +41,7 @@ TEST(PackedMethod, fp_0to1)
 TEST(PackedMethod, fp_1to1) 
 {
     // wrap static function pointer
-    auto method=mpack::msgpack::packmethod(one);
+    auto method=mpack::msgpack::rpc::packmethod(one);
 
     // call method(packing result to result_packer)
     auto result_packer=mpack::msgpack::create_vector_packer();
@@ -62,7 +62,7 @@ TEST(PackedMethod, fp_1to1)
 TEST(PackedMethod, fp_2to1) 
 {
     // wrap static function pointer
-    auto method=mpack::msgpack::packmethod(bin);
+    auto method=mpack::msgpack::rpc::packmethod(bin);
 
     // call method(packing result to result_packer)
     auto result_packer=mpack::msgpack::create_vector_packer();
@@ -83,7 +83,7 @@ TEST(PackedMethod, fp_2to1)
 TEST(PackedMethod, lambda_2to1) 
 {
     auto add_lambda=[](int a, int b){ return a+b; };
-    auto method=mpack::msgpack::packmethod(add_lambda);
+    auto method=mpack::msgpack::rpc::packmethod(add_lambda);
 
     // call method(packing result to result_packer)
     auto result_packer=mpack::msgpack::create_vector_packer();

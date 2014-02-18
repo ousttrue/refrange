@@ -114,6 +114,7 @@ if __name__=="__main__":
 
 namespace mpack {
 namespace msgpack {
+namespace rpc {
 """
 
     for i in range(10):
@@ -145,6 +146,7 @@ template<typename F>
         return pack_functor(f, &F::operator());
     }
 
+} // namespace
 } // namespace
 } // namespace
 """

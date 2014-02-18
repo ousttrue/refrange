@@ -11,7 +11,7 @@ static int add(int a, int b)
 TEST(RPC, fp_2to1) 
 {
     // regsiter functions
-    auto method=mpack::msgpack::packmethod(add);
+    auto method=mpack::msgpack::rpc::packmethod(add);
     mpack::msgpack::rpc::dispatcher d;
     d.register_method("add", method);
 
