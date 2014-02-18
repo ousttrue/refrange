@@ -516,9 +516,12 @@ namespace msgpack {
 
         byte_type read_head_byte()
         {
-            return static_cast<byte_type>(read_value<unsigned char>());
+			unsigned char c;
+			read_value<unsigned char>(&c);
+            return static_cast<byte_type>(c);
         }
 
+		/*
         unpacker& unpack(writer_t writer)
         {
             auto head_byte=read_head_byte();
@@ -528,12 +531,14 @@ namespace msgpack {
 
             return *this;
         }
+		*/
 
         unpacker& unpack_nil()
         {
             assert(is_nil());
             // drop a byte
-            read_value<unsigned char>();
+			unsigned char c;
+            read_value<unsigned char>(&c);
 			return *this;
         }
 
@@ -562,7 +567,7 @@ namespace msgpack {
             switch(head_byte)
             {
                 case byte_float32:
-                    t=read_value<float>();
+                    read_value<float>(&t);
                     break;
 
                 case byte_float64:
@@ -581,11 +586,19 @@ namespace msgpack {
             switch(head_byte)
             {
                 case byte_float32:
-                    t=read_value<float>();
+					{
+						float f;
+						read_value<float>(&f);
+						t=f;
+					}
                     break;
 
                 case byte_float64:
-                    t=read_value<double>();
+					{
+						double d;
+						read_value<double>(&d);
+						t=d;
+					}
                     break;
 
                 default:
@@ -602,7 +615,11 @@ namespace msgpack {
             switch(head_byte)
             {
                 case byte_uint8:
-                    t=read_value<unsigned char>();
+					{
+						unsigned char u;
+						read_value<unsigned char>(&u);
+						t=u;
+					}
                     break;
 
                 case byte_uint16:
@@ -610,7 +627,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<unsigned short>());
+						unsigned short u;
+						read_value<unsigned short>(&u);
+                        t=static_cast<T>(u);
                     }
                     break;
 
@@ -619,7 +638,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<unsigned int>());
+						unsigned int u;
+						read_value<unsigned int>(&u);
+                        t=static_cast<T>(u);
                     }
                     break;
 
@@ -628,12 +649,18 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<unsigned long long>());
+						unsigned long long u;
+						read_value<unsigned long long>(&u);
+                        t=static_cast<T>(u);
                     }
                     break;
 
                 case byte_int8:
-                    t=static_cast<T>(read_value<char>());
+					{
+						char c;
+						read_value<char>(&c);
+						t=static_cast<T>(c);
+					}
                     break;
 
                 case byte_int16:
@@ -641,7 +668,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<short>());
+						short s;
+						read_value<short>(&s);
+                        t=static_cast<T>(s);
                     }
                     break;
 
@@ -650,7 +679,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else {
-                        t=static_cast<T>(read_value<int>());
+						int s;
+						read_value<int>(&s);
+                        t=static_cast<T>(s);
                     }
                     break;
 
@@ -659,7 +690,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<long long>());
+						long long s;
+						read_value<long long>(&s);
+                        t=static_cast<T>(s);
                     }
                     break;
 
@@ -686,7 +719,11 @@ namespace msgpack {
             switch(head_byte)
             {
                 case byte_uint8:
-                    t=read_value<unsigned char>();
+					{
+						unsigned char u;
+						read_value<unsigned char>(&u);
+						t=u;
+					}
                     break;
 
                 case byte_uint16:
@@ -694,7 +731,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<unsigned short>());
+						unsigned short u;
+						read_value<unsigned short>(&u);
+                        t=static_cast<T>(u);
                     }
                     break;
 
@@ -703,7 +742,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<unsigned int>());
+						unsigned int u;
+						read_value<unsigned int>(&u);
+                        t=static_cast<T>(u);
                     }
                     break;
 
@@ -712,7 +753,9 @@ namespace msgpack {
                         throw std::exception("range check ?");
                     }
                     else{
-                        t=static_cast<T>(read_value<unsigned long long>());
+						unsigned long long u;
+						read_value<unsigned long long>(&u);
+                        t=static_cast<T>(u);
                     }
                     break;
 
@@ -739,40 +782,52 @@ namespace msgpack {
             {
                 case byte_str8:
                     {
-                        auto len=read_value<unsigned char>();
+						unsigned char len;
+                        read_value<unsigned char>(&len);
                         s.reserve(len);
                         for(size_t i=0; i<len; ++i){
-                            s.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            s.push_back(c);
                         }
                     }
                     break;
 
                 case byte_str16:
                     {
-                        auto len=read_value<unsigned short>();
+						unsigned short len;
+                        read_value<unsigned short>(&len);
                         s.reserve(len);
                         for(size_t i=0; i<len; ++i){
-                            s.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            s.push_back(c);
                         }
                     }
                     break;
 
                 case byte_str32:
                     {
-                        auto len=read_value<unsigned int>();
+                        unsigned int len;
+						read_value<unsigned int>(&len);
                         s.reserve(len);
                         for(size_t i=0; i<len; ++i){
-                            s.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            s.push_back(c);
                         }
                     }
                     break;
 
                 default:
                     if(partial_bit_equal<fixstr>(head_byte)){
+						// fixstr
                         auto len=extract_head_byte<fixstr>(head_byte);
                         s.reserve(len);
                         for(int i=0; i<len; ++i){
-                            s.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            s.push_back(c);
                         }
                     }
                     else{
@@ -791,30 +846,39 @@ namespace msgpack {
             {
                 case byte_bin8:
                     {
-                        auto len=read_value<unsigned char>();
+						unsigned char len;
+                        read_value<unsigned char>(&len);
                         b.reserve(len);
                         for(size_t i=0; i<len; ++i){
-                            b.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            b.push_back(c);
                         }
                     }
                     break;
 
                 case byte_bin16:
                     {
-                        auto len=read_value<unsigned short>();
+						unsigned short len;
+                        read_value<unsigned short>(&len);
                         b.reserve(len);
                         for(size_t i=0; i<len; ++i){
-                            b.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            b.push_back(c);
                         }
                     }
                     break;
 
                 case byte_bin32:
                     {
-                        auto len=read_value<unsigned int>();
+						unsigned int len;
+                        read_value<unsigned int>(&len);
                         b.reserve(len);
                         for(size_t i=0; i<len; ++i){
-                            b.push_back(read_value<char>());
+							char c;
+							read_value<char>(&c);
+                            b.push_back(c);
                         }
                     }
                     break;
@@ -881,23 +945,39 @@ namespace msgpack {
             switch(head_byte)
             {
                 case byte_array16:
-                    c.type=collection_context::collection_array;
-                    c.size=read_value<unsigned short>();
+					{
+						c.type=collection_context::collection_array;
+						unsigned short u;
+						read_value<unsigned short>(&u);
+						c.size=u;
+					}
                     break;
 
                 case byte_array32:
-                    c.type=collection_context::collection_array;
-                    c.size=read_value<unsigned int>();
+					{
+						c.type=collection_context::collection_array;
+						unsigned int u;
+						read_value<unsigned int>(&u);
+						c.size=u;
+					}
                     break;
 
                 case byte_map16:
-                    c.type=collection_context::collection_map;
-                    c.size=read_value<unsigned short>();
+					{
+						c.type=collection_context::collection_map;
+						unsigned short u;
+						read_value<unsigned short>(&u);
+						c.size=u;
+					}
                     break;
 
                 case byte_map32:
-                    c.type=collection_context::collection_map;
-                    c.size=read_value<unsigned int>();
+					{
+						c.type=collection_context::collection_map;
+						unsigned int u;
+						read_value<unsigned int>(&u);
+						c.size=u;
+					}
                     break;
 
                 default:
@@ -917,12 +997,12 @@ namespace msgpack {
             return *this;
         }
     private:
-        template<typename T>
-        T read_value()
+        template<typename T, typename W>
+        void read_value(W *w)
         {
             T n;
             size_t size=read((unsigned char*)&n, sizeof(T));
-            return n;
+            *w=n;
         }
 
         size_t read(unsigned char *p, size_t len)
