@@ -1,6 +1,5 @@
 #include <mpack.h>
 #include <gtest/gtest.h>
-#include <map>
 
 
 static int add(int a, int b)
@@ -9,63 +8,11 @@ static int add(int a, int b)
 }
 
 
-class dispatcher
-{
-    std::map<std::string, mpack::msgpack::packedmethod> m_map;
-public:
-    void register_method(const std::string &name, const mpack::msgpack::packedmethod &m)
-    {
-        m_map[name]=m;
-    }
-
-    void dispatch(mpack::msgpack::packer &response, 
-            const unsigned char *request, size_t len)
-    {
-        // unpack request
-        auto u=mpack::msgpack::create_memory_unpacker(request, len);
-        if(!u.is_array()){
-            throw std::exception(__FUNCTION__);
-        }
-
-        auto c=mpack::msgpack::array();
-        u >> c;
-        if(c.size!=4){
-            throw std::exception(__FUNCTION__);
-        }
-
-        int t;
-        u >> t;
-        if(t!=0){
-            throw std::exception(__FUNCTION__);
-        }
-
-        int id;
-        u >> id;
-
-        std::string name;
-        u >> name;
-
-        auto it=m_map.find(name);
-        if(it==m_map.end()){
-            // not found
-            throw std::exception(__FUNCTION__);
-        }
-
-        // call
-        auto p=mpack::msgpack::create_vector_packer();
-        it->second(p, u);
-
-        // pack result
-        mpack::msgpack::rpc::pack_response(response, id, p);
-    }
-};
-
-
 TEST(RPC, fp_2to1) 
 {
     // regsiter functions
     auto method=mpack::msgpack::packmethod(add);
-    dispatcher d;
+    mpack::msgpack::rpc::dispatcher d;
     d.register_method("add", method);
 
     // pack args 

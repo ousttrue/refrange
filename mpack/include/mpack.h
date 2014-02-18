@@ -10,6 +10,6 @@ typedef std::function<void(packer&, unpacker&)> packedmethod;
 }}
 
 #include "mpack/packedmethod.h"
-
 #include "mpack/rpc.h"
+#include "mpack/dispatcher.h"
 
