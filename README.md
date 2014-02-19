@@ -9,11 +9,12 @@ Msgpackを自分用に再実装する
 * シリアライズをせずに動的に構築するapiを提供する
 * 型のあるBoost.PropertyTreeみたいな使い勝手のapiを提供する
 * JSONと相互に変換するapi
-* 後で[msgpack-rpc-asio](https://github.com/ousttrue/msgpack-rpc-asio)のバックエンドにする
 * シンプル実装を心がける
 * Test Driven
 
 ToDo
 ----
 * packer エラー型
-* unpacker エラー型(eof, unpack先のサイズ不足)
+* unpacker エラー型(eof, 数値代入時のoverflow, underflow, 桁落ち)
+* sequence型api整理
+* 後で[msgpack-rpc-asio](https://github.com/ousttrue/msgpack-rpc-asio)のバックエンドにする

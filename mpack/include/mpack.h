@@ -2,6 +2,8 @@
 #include <functional>
 
 #include "mpack/msgpack.h"
+#include "mpack/msgpack_utility.h"
+#include "mpack/basic_overload.h"
 #include "mpack/json.h"
 #include "mpack/typestruct.h"
 
