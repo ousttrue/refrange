@@ -1150,16 +1150,7 @@ namespace msgpack {
         {
             static const bool value = true;
         };
-    template<>
-        struct is_allow<true_tag, bool>
-        {
-			static const bool value = true;
-        };
-    template<>
-        struct is_allow<false_tag, bool>
-        {
-			static const bool value = true;
-        };
+    // sequence
     template<class Tag>
         struct is_allow<Tag, std::string
         , typename std::enable_if<is_sequence<Tag>::value>::type
@@ -1174,6 +1165,7 @@ namespace msgpack {
         {
             static const bool value = true;
         };
+    // void
     template<class Tag>
         struct is_allow<Tag, void>
         {
