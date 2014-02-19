@@ -15,58 +15,56 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // message
     //////////////////////////////////////////////////////////////////////////////
+
     struct nil_tag
     {
         enum bits_t { bits=0xc0 };
-        typedef void read_type;
     };
 
     struct false_tag
     {
         enum bits_t { bits=0xc2 };
-        typedef void read_type;
+
+        typedef bool fixed_value_type;
+        fixed_value_type value(){ return false; };
     };
 
     struct true_tag
     {
         enum bits_t { bits=0xc3 };
-        typedef void read_type;
+
+        typedef bool fixed_value_type;
+        fixed_value_type value(){ return true; };
     };
 
     struct bin8_tag
     {
         enum bits_t { bits=0xc4 };
-        typedef void read_type;
     };
 
     struct bin16_tag
     {
         enum bits_t { bits=0xc5 };
-        typedef void read_type;
     };
 
     struct bin32_tag
     {
         enum bits_t { bits=0xc6 };
-        typedef void read_type;
     };
 
     struct ext8_tag
     {
         enum bits_t { bits=0xc7 };
-        typedef void read_type;
     };
 
     struct ext16_tag
     {
         enum bits_t { bits=0xc8 };
-        typedef void read_type;
     };
 
     struct ext32_tag
     {
         enum bits_t { bits=0xc9 };
-        typedef void read_type;
     };
 
     struct float32_tag
@@ -132,55 +130,51 @@ namespace msgpack {
     struct fixext1_tag
     {
         enum bits_t { bits=0xd4 };
-        typedef void read_type;
     };
 
     struct fixext2_tag
     {
         enum bits_t { bits=0xd5 };
-        typedef void read_type;
     };
 
     struct fixext4_tag
     {
         enum bits_t { bits=0xd6 };
-        typedef void read_type;
     };
 
     struct fixext8_tag
     {
         enum bits_t { bits=0xd7 };
-        typedef void read_type;
     };
 
     struct fixext16_tag
     {
         enum bits_t { bits=0xd8 };
-        typedef void read_type;
     };
 
     struct str8_tag
     {
         enum bits_t { bits=0xd9 };
-        typedef void read_type;
     };
 
     struct str16_tag
     {
         enum bits_t { bits=0xda };
-        typedef void read_type;
     };
 
     struct str32_tag
     {
         enum bits_t { bits=0xdb };
-        typedef void read_type;
     };
+
+    struct no_collection_tag{};
+    struct array_tag{};
+    struct map_tag{};
 
     struct array16_tag
     {
+        enum is_array_t { is_array=1 };
         enum bits_t { bits=0xdc };
-        typedef void read_type;
 
         unsigned short len;
         array16_tag(unsigned short l)
@@ -190,8 +184,8 @@ namespace msgpack {
 
     struct array32_tag
     {
+        enum is_array_t { is_array=1 };
         enum bits_t { bits=0xdd };
-        typedef void read_type;
 
         unsigned int len;
         array32_tag(unsigned int l)
@@ -201,8 +195,8 @@ namespace msgpack {
 
     struct map16_tag
     {
+        enum is_map_t { is_map=1 };
         enum bits_t { bits=0xde };
-        typedef void read_type;
 
         unsigned short len;
         map16_tag(unsigned short l)
@@ -212,8 +206,8 @@ namespace msgpack {
 
     struct map32_tag
     {
+        enum is_map_t { is_map=1 };
         enum bits_t { bits=0xdf };
-        typedef void read_type;
 
         unsigned int len;
         map32_tag(unsigned int l)
@@ -221,44 +215,57 @@ namespace msgpack {
         {}
     };
 
+	template<class T>
+	bool partial_bit_equal(unsigned char byte)
+	{
+		return T::bits == (T::mask & byte);
+	}
+
+	template<class T>
+	char extract_head_byte(unsigned char byte)
+	{
+		return static_cast<char>(byte & ~T::mask);
+	}
+
     struct positive_fixint_tag
     {
         enum bits_t { bits=0x00 };
         enum mask_t { mask=0x80 };
-        typedef void read_type;
 
         unsigned char head_byte;
         positive_fixint_tag(unsigned char b)
             : head_byte(b)
         {}
+
+        typedef char fixed_value_type;
+        fixed_value_type value(){ return static_cast<fixed_value_type>(head_byte); };
     };
     struct fixmap_tag
     {
+        enum is_map_t { is_map=1 };
         enum bits_t { bits=0x80 };
         enum mask_t { mask=0xF0 };
-        typedef void read_type;
 
-        unsigned char head_byte;
-        fixmap_tag(unsigned char b)
-            : head_byte(b)
+        unsigned char len;
+        fixmap_tag(unsigned char l)
+            : len(l)
         {}
     };
     struct fixarray_tag
     {
+        enum is_array_t { is_array=1 };
         enum bits_t { bits=0x90 };
         enum mask_t { mask=0xf0 };
-        typedef void read_type;
 
-        unsigned char head_byte;
-        fixarray_tag(unsigned char b)
-            : head_byte(b)
+        unsigned char len;
+        fixarray_tag(unsigned char l)
+            : len(l)
         {}
     };
     struct fixstr_tag
     {
         enum bits_t { bits=0xa0 };
         enum mask_t { mask=0xe0};
-        typedef void read_type;
 
         unsigned char head_byte;
         fixstr_tag(unsigned char b)
@@ -269,43 +276,39 @@ namespace msgpack {
     {
         enum bits_t { bits=0xe0 };
         enum mask_t { mask=0xe0 };
-        typedef void read_type;
 
         unsigned char head_byte;
         negative_fixint_tag(unsigned char b)
             : head_byte(b)
         {}
+
+        typedef char fixed_value_type;
+        fixed_value_type value(){ return -static_cast<fixed_value_type>(extract_head_byte<negative_fixint_tag>(head_byte)); };
     };
-
-    template<class T>
-        bool partial_bit_equal(unsigned char byte)
-        {
-            return T::bits==(T::mask & byte);
-        }
-
-    template<class T>
-        char extract_head_byte(unsigned char byte)
-        {
-            return static_cast<char>(byte & ~T::mask);
-        }
-
-
-		struct type_unknown_tag{};
-		struct type_primitive_tag{};
-
-		// default
-		template <class T>
-		struct traits
-		{
-			typedef type_unknown_tag value_tag;
-		};
-
-
 
 
     //////////////////////////////////////////////////////////////////////////////
     // packer
     //////////////////////////////////////////////////////////////////////////////
+    template<class Tag, class Enable=void>
+        struct collection_traits
+        {
+            typedef no_collection_tag tag;
+        };
+
+    template<class Tag>
+        struct collection_traits<Tag, typename std::enable_if<Tag::is_map>::type>
+        {
+            typedef map_tag tag;
+        };
+
+    template<class Tag>
+        struct collection_traits<Tag, typename std::enable_if<Tag::is_array>::type>
+        {
+            typedef array_tag tag;
+        };
+
+
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
     struct collection_context
     {
@@ -338,10 +341,32 @@ namespace msgpack {
 		{
 		}
 
-		template<class TAG>
-        void read_from(TAG &tag, reader_t &reader, unsigned int count=0)
+        template<class Tag>
+		void _read_from(Tag &tag, reader_t &reader, unsigned int count, no_collection_tag)
         {
+            // not reach here
+            assert(false);
         }
+
+        template<class Tag>
+            void _read_from(Tag &tag, reader_t &reader, unsigned int count, map_tag)
+            {
+                type=collection_map;
+                size=tag.len;
+            }
+
+        template<class Tag>
+            void _read_from(Tag &tag, reader_t &reader, unsigned int count, array_tag)
+            {
+                type=collection_array;
+                size=tag.len;
+            }
+
+        template<class Tag>
+            void read_from(Tag &tag, reader_t &reader, unsigned int count=0)
+            {
+                _read_from(tag, reader, count, collection_traits<Tag>::tag());
+            }
     };
 
 
@@ -630,11 +655,11 @@ namespace msgpack {
         }
 
 //private:
-		template<class TAG>
+		template<class Tag>
         void write_head_byte()
         {
             new_item();
-            write_value(TAG::bits);
+            write_value(static_cast<unsigned char>(Tag::bits));
         }
 
         template<typename T>
@@ -713,81 +738,175 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // unpacker
     //////////////////////////////////////////////////////////////////////////////
-	extern void * enabler;
+    // read_assign
+	struct no_value_tag{};
+    struct read_value_tag{};
+    struct fixed_value_tag{};
+    template<class Tag
+        , class TagEnable=void
+        >
+        struct read_traits
+        {
+            typedef no_value_tag tag;
+        };
+    template<class Tag>
+        struct read_traits<Tag
+        , typename std::enable_if<std::is_arithmetic<typename Tag::read_type>::value>::type
+        >
+        {
+            typedef read_value_tag tag;
+        };
+    template<class Tag>
+        struct read_traits<Tag
+        , typename std::enable_if<std::is_arithmetic<typename Tag::fixed_value_type>::value>::type
+        >
+        {
+            typedef fixed_value_tag tag;
+        };
 
-	template <class TAG, typename VALUE
-        , typename std::enable_if<!std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
-		, typename std::enable_if<std::is_arithmetic<VALUE>::value>::type *& = enabler
-	>
-	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
-	{
-        throw std::exception(__FUNCTION__);
-	}
+    struct nocopy_tag{};
+    struct arithmetic_copy_tag{};
+    struct sequence_tag{};
 
-	template <class TAG, typename VALUE
-		, typename std::enable_if<std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
-		, typename std::enable_if<!std::is_arithmetic<VALUE>::value>::type *& = enabler
+    template<typename Value, class ValueEnable=void>
+        struct assign_traits
+        {
+			typedef nocopy_tag tag;
+        };
+    template<typename Value>
+        struct assign_traits<Value
+            , typename std::enable_if<std::is_arithmetic<Value>::value>::type
 		>
-	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
-	{
-        throw std::exception(__FUNCTION__);
-	}
+        {
+			typedef arithmetic_copy_tag tag;
+        };
+    template<>
+        struct assign_traits<std::string>
+        {
+			typedef sequence_tag tag;
+        };
+    template<>
+        struct assign_traits<std::vector<unsigned char>>
+        {
+			typedef sequence_tag tag;
+        };
 
-	template <class TAG, typename VALUE
-		, typename std::enable_if<!std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
-		, typename std::enable_if<!std::is_arithmetic<VALUE>::value>::type *& = enabler
-	>
-	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
-	{
-		throw std::exception(__FUNCTION__);
-	}
 
-	template <class TAG, typename VALUE
-		, typename std::enable_if<std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
-		, typename std::enable_if<std::is_arithmetic<VALUE>::value>::type *& = enabler
-		>
-	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
-	{
-        TAG::read_type t;
-        auto size = reader((unsigned char*)&t, sizeof(t));
-        assert(size == sizeof(t));
-        v = static_cast<VALUE>(t);
-	}
+    //
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, no_value_tag, arithmetic_copy_tag)
+        {
+            assert(count==0);
+            // do nothing
+        }
 
-    template<typename T>
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, read_value_tag, arithmetic_copy_tag)
+        {
+            assert(count==0);
+
+            Tag::read_type t;
+            auto size = reader((unsigned char*)&t, sizeof(t));
+            assert(size == sizeof(t));
+
+            *v = static_cast<Value>(t);
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, fixed_value_tag, arithmetic_copy_tag)
+        {
+            assert(count==0);
+            *v = static_cast<Value>(tag.value());
+        }
+
+    //
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, no_value_tag, nocopy_tag)
+        {
+            assert(count==0);
+            // do nothing
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, read_value_tag, nocopy_tag)
+        {
+            assert(count==0);
+
+            Tag::read_type t;
+            auto size = reader((unsigned char*)&t, sizeof(t));
+            assert(size == sizeof(t));
+
+            // read only
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, fixed_value_tag, nocopy_tag)
+        {
+            assert(count==0);
+            // do nothing
+        }
+
+    //
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, no_value_tag, sequence_tag)
+        {
+			if (count == 0){
+				return;
+			}
+            v->resize(count);
+            auto size=reader((unsigned char*)&((*v)[0]), count);
+            assert(size==count);
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, read_value_tag, sequence_tag)
+        {
+            assert(false);
+            // not reach here
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, unsigned int count, Value *v, fixed_value_tag, sequence_tag)
+        {
+            assert(false);
+            // not reach here
+        }
+
+    template<typename Value>
 	struct buffer
     {
-        T &m_p;
+        Value *m_p;
 
-		buffer(T &p)
+        buffer()
+            : m_p(0)
+        {}
+
+		buffer(Value *p)
             : m_p(p)
         {
         }
 
-        template<class TAG>
-        void read_from(TAG &tag, reader_t &reader, unsigned int count=0)
+        template<class Tag>
+        void read_from(Tag &tag, reader_t &reader, unsigned int count=0)
         {
-			assert(count == 0);
-
-			read_body_from(tag, reader, m_p);
-        }
-    };
-
-	struct dummy_buffer
-    {
-        template<class TAG>
-        void read_from(TAG &tag, reader_t &reader, unsigned int count=0)
-        {
+            read_and_assign(tag, reader, count,
+                    m_p, 
+                    read_traits<Tag>::tag(),
+                    assign_traits<Value>::tag());
         }
     };
 
 
-    template<typename T>
-    inline buffer<T> create_buffer(T &t)
+    template<typename Value>
+    inline buffer<Value> create_buffer(Value &t)
     {
-        return buffer<T>(t);
+        return buffer<Value>(&t);
     }
 
+    inline buffer<void> dummy_buffer()
+    {
+        return buffer<void>();
+    }
 
     class unpacker
     {
@@ -837,7 +956,7 @@ namespace msgpack {
                     break;
 
 				case float32_tag::bits:
-                    b.read_from(false_tag(), m_reader);
+                    b.read_from(float32_tag(), m_reader);
                     break;
 
 				case float64_tag::bits:
@@ -931,9 +1050,11 @@ namespace msgpack {
                         unsigned short len;
                         read_value<unsigned short>(&len);
                         b.read_from(array16_tag(len), m_reader);
+						/*
                         for(unsigned short i=0; i<len; ++i){
                             unpack(b);
                         }
+						*/
                     }
                     break;
 
@@ -942,9 +1063,11 @@ namespace msgpack {
 						unsigned int len;
 						read_value<unsigned int>(&len);
                         b.read_from(array32_tag(len), m_reader);
+						/*
                         for(unsigned int i=0; i<len; ++i){
                             unpack(b);
                         }
+						*/
 					}
                     break;
 
@@ -953,10 +1076,6 @@ namespace msgpack {
 						unsigned short len;
 						read_value<unsigned short>(&len);
                         b.read_from(map16_tag(len), m_reader);
-                        for(unsigned short i=0; i<len; ++i){
-                            unpack(b); // key
-                            unpack(b); // value
-                        }
 					}
                     break;
 
@@ -965,10 +1084,6 @@ namespace msgpack {
 						unsigned int len;
 						read_value<unsigned int>(&len);
                         b.read_from(map32_tag(len), m_reader);
-                        for(unsigned int i=0; i<len; ++i){
-                            unpack(b); // key
-                            unpack(b); // value
-                        }
 					}
                     break;
 
@@ -1000,19 +1115,12 @@ namespace msgpack {
                     else if(partial_bit_equal<fixarray_tag>(head_byte)){
                         // collection
                         unsigned char len=extract_head_byte<fixarray_tag>(head_byte);
-                        b.read_from(fixarray_tag(head_byte), m_reader, len);
-                        for(unsigned char i=0; i<len; ++i){
-                            unpack(b);
-                        }
+                        b.read_from(fixarray_tag(len), m_reader);
                     }
                     else if(partial_bit_equal<fixmap_tag>(head_byte)){
                         // collection
                         unsigned char len=extract_head_byte<fixmap_tag>(head_byte);
-                        b.read_from(fixmap_tag(head_byte), m_reader, len);
-                        for(unsigned char i=0; i<len; ++i){
-                            unpack(b); // key
-                            unpack(b); // value
-                        }
+                        b.read_from(fixmap_tag(len), m_reader);
                     }
                     else {
                         throw std::invalid_argument(__FUNCTION__);
