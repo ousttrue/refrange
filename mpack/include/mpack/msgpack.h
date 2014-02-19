@@ -12,6 +12,13 @@
 namespace mpack {
 namespace msgpack {
 
+    struct unpack_error: public std::invalid_argument
+    {
+        unpack_error(const std::string &message)
+            : std::invalid_argument(message)
+        {}
+    };
+
     struct no_collection_tag{};
     struct array_tag{};
     struct map_tag{};
@@ -560,33 +567,6 @@ namespace msgpack {
             : type(_type), size(_size), p(_p), len(_len)
         {
         }
-
-        template<class Tag>
-            void _read_from(Tag &tag, reader_t &reader, no_collection_tag)
-            {
-                // not reach here
-                assert(false);
-            }
-
-        template<class Tag>
-            void _read_from(Tag &tag, reader_t &reader, map_tag)
-            {
-                type=collection_map;
-                size=tag.len;
-            }
-
-        template<class Tag>
-            void _read_from(Tag &tag, reader_t &reader, array_tag)
-            {
-                type=collection_array;
-                size=tag.len;
-            }
-
-        template<class Tag>
-            void read_from(Tag &tag, reader_t &reader)
-            {
-                _read_from(tag, reader, collection_traits<Tag>::tag());
-            }
     };
 
 
@@ -1151,6 +1131,69 @@ namespace msgpack {
             return c;
         }
 
+        unpacker& unpack_collection(collection_context &c)
+        {
+            auto head_byte=read_head_byte();
+            switch(head_byte)
+            {
+                case array16_tag::bits:
+                    {
+                        unsigned short len;
+                        read_value<unsigned short>(&len);
+                        c.type=collection_context::collection_array;
+                        c.size=len;
+                    }
+                    break;
+
+                case array32_tag::bits:
+                    {
+                        unsigned int len;
+                        read_value<unsigned int>(&len);
+                        c.type=collection_context::collection_array;
+                        c.size=len;
+                    }
+                    break;
+
+                case map16_tag::bits:
+                    {
+                        unsigned short len;
+                        read_value<unsigned short>(&len);
+                        c.type=collection_context::collection_map;
+                        c.size=len;
+                    }
+                    break;
+
+                case map32_tag::bits:
+                    {
+                        unsigned int len;
+                        read_value<unsigned int>(&len);
+                        c.type=collection_context::collection_map;
+                        c.size=len;
+                    }
+                    break;
+
+                default:
+                    if(partial_bit_equal<fixarray_tag>(head_byte)){
+                        // collection
+                        unsigned char len=extract_head_byte<fixarray_tag>(head_byte);
+                        c.type=collection_context::collection_array;
+                        c.size=len;
+                    }
+                    else if(partial_bit_equal<fixmap_tag>(head_byte)){
+                        // collection
+                        unsigned char len=extract_head_byte<fixmap_tag>(head_byte);
+                        c.type=collection_context::collection_map;
+                        c.size=len;
+                    }
+                    else{
+                        throw unpack_error(__FUNCTION__);
+                    }
+                    break;
+            }
+
+            return *this;
+        }
+
         template<class BUFFER>
             unpacker& unpack(BUFFER &b)
             {
@@ -1260,36 +1303,10 @@ namespace msgpack {
 
                         // collection
                     case array16_tag::bits:
-                        {
-                            unsigned short len;
-                            read_value<unsigned short>(&len);
-                            b.read_from(array16_tag(len), m_reader);
-                        }
-                        break;
-
                     case array32_tag::bits:
-                        {
-                            unsigned int len;
-                            read_value<unsigned int>(&len);
-                            b.read_from(array32_tag(len), m_reader);
-                        }
-                        break;
-
                     case map16_tag::bits:
-                        {
-                            unsigned short len;
-                            read_value<unsigned short>(&len);
-                            b.read_from(map16_tag(len), m_reader);
-                        }
-                        break;
-
                     case map32_tag::bits:
-                        {
-                            unsigned int len;
-                            read_value<unsigned int>(&len);
-                            b.read_from(map32_tag(len), m_reader);
-                        }
-                        break;
+                        throw unpack_error(__FUNCTION__);
 
 #if 0
                     case ext8_tag::bits:
@@ -1317,16 +1334,6 @@ namespace msgpack {
                             // str todo
                             auto len=extract_head_byte<fixstr_tag>(head_byte);
                             b.read_from(fixstr_tag(len), m_reader);
-                        }
-                        else if(partial_bit_equal<fixarray_tag>(head_byte)){
-                            // collection
-                            unsigned char len=extract_head_byte<fixarray_tag>(head_byte);
-                            b.read_from(fixarray_tag(len), m_reader);
-                        }
-                        else if(partial_bit_equal<fixmap_tag>(head_byte)){
-                            // collection
-                            unsigned char len=extract_head_byte<fixmap_tag>(head_byte);
-                            b.read_from(fixmap_tag(len), m_reader);
                         }
                         else {
                             throw std::invalid_argument(__FUNCTION__);
@@ -1442,7 +1449,7 @@ namespace msgpack {
     inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack(create_buffer(t)); }
 
     // collection
-    inline unpacker& operator>>(unpacker &unpacker, collection_context &t){ return unpacker.unpack(t); }
+    inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return unpacker.unpack_collection(c); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility
