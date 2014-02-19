@@ -59,7 +59,6 @@ public:
 
             std::cout << "read: " << bytes_transferred << std::endl;
 
-			/*
             std::copy(self->m_read_buffer, self->m_read_buffer+bytes_transferred, std::back_inserter(self->m_unpack_buffer));
             if(!self->m_unpack_buffer.empty()){
                 auto unpacker=mpack::msgpack::create_memory_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
@@ -83,7 +82,6 @@ public:
                     begin_write(response_packer.pointer(), response_packer.size());
                 }
             }
-			*/
 
             // next
             self->begin_read();
