@@ -50,23 +50,23 @@ inline packer& operator<<(packer &packer, const collection_context &t){ return p
 // operator>>
 //////////////////////////////////////////////////////////////////////////////
 // bool
-inline unpacker& operator>>(unpacker &unpacker, bool &t) { return unpacker.unpack_to_bool(t); }
+inline unpacker& operator>>(unpacker &unpacker, bool &t) { return unpacker.unpack(create_buffer(t)); }
 // signed
-inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack_to_arithmetic(t); }
+inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack(create_buffer(t)); }
 // unsigned
-inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack_to_arithmetic(t); }
+inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack(create_buffer(t)); }
 // float
-inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_to_arithmetic(t); }
-inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_to_arithmetic(t); }
+inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack(create_buffer(t)); }
 // sequence
-inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack_to_sequence(t); }
-inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack_to_sequence(t); }
+inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack(create_buffer(t)); }
+inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack(create_buffer(t)); }
 
 // collection
 inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return unpacker.unpack_collection(c); }

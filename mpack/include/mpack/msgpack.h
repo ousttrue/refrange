@@ -929,6 +929,7 @@ namespace msgpack {
     // assign_traits
     struct nocopy_tag{};
     struct arithmetic_copy_tag{};
+    struct bool_copy_tag{};
     struct sequence_tag{};
 
     template<typename Value, class ValueEnable=void>
@@ -942,6 +943,11 @@ namespace msgpack {
         >
         {
             typedef arithmetic_copy_tag tag;
+        };
+    template<>
+        struct assign_traits<bool>
+        {
+            typedef bool_copy_tag tag;
         };
     template<>
         struct assign_traits<std::string>
@@ -976,6 +982,22 @@ namespace msgpack {
         void read_and_assign(Tag &tag, reader_t &reader, Value *v, header_value_tag, arithmetic_copy_tag)
         {
             *v = static_cast<Value>(tag.value());
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, Value *v, read_value_tag, bool_copy_tag)
+        {
+            Tag::read_type t;
+            auto size = reader((unsigned char*)&t, sizeof(t));
+            assert(size == sizeof(t));
+
+            *v = t != 0;
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, Value *v, header_value_tag, bool_copy_tag)
+        {
+            *v = tag.value() != 0;
         }
 
     template<class Tag, class Value>
@@ -1053,6 +1075,111 @@ namespace msgpack {
             assert(size==tag.len);
         }
 
+    // is_sequence
+    template<class Tag, class EnableTag=void>
+        struct is_sequence
+        {
+			static const bool value = false;
+        };
+    template<>
+        struct is_sequence<fixstr_tag>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_sequence<str8_tag>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_sequence<str16_tag>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_sequence<str32_tag>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_sequence<bin8_tag>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_sequence<bin16_tag>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_sequence<bin32_tag>
+        {
+            static const bool value = true;
+        };
+
+    // is_allow
+    template<class Tag, class Value, class EnableTag=void, class EnableValue=void, class EnoughSize=void>
+        struct is_allow
+        {
+			static const bool value = false;
+        };
+    template<class Tag, class Value>
+        struct is_allow<Tag, Value
+        , typename std::enable_if<std::is_integral<typename Tag::read_type>::value>::type
+        , typename std::enable_if<std::is_integral<Value>::value>::type
+        //, typename std::enable_if<sizeof(Tag::read_type)<=sizeof(Value)>::type
+        >
+        {
+            static const bool value = true;
+        };
+    template<class Tag, class Value>
+        struct is_allow<Tag, Value
+        , typename std::enable_if<std::is_integral<typename Tag::header_value_type>::value>::type
+        , typename std::enable_if<std::is_integral<Value>::value>::type
+        //, typename std::enable_if<sizeof(Tag::header_value_type)<=sizeof(Value)>::type
+        >
+        {
+            static const bool value = true;
+        };
+    template<class Tag, class Value>
+        struct is_allow<Tag, Value
+        , typename std::enable_if<std::is_floating_point<typename Tag::read_type>::value>::type
+        , typename std::enable_if<std::is_floating_point<Value>::value>::type
+        //, typename std::enable_if<sizeof(Tag::read_type)<=sizeof(Value)>::type
+        >
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_allow<true_tag, bool>
+        {
+			static const bool value = true;
+        };
+    template<>
+        struct is_allow<false_tag, bool>
+        {
+			static const bool value = true;
+        };
+    template<class Tag>
+        struct is_allow<Tag, std::string
+        , typename std::enable_if<is_sequence<Tag>::value>::type
+        >
+        {
+            static const bool value = true;
+        };
+    template<class Tag>
+        struct is_allow<Tag, std::vector<unsigned char>
+        , typename std::enable_if<is_sequence<Tag>::value>::type
+        >
+        {
+            static const bool value = true;
+        };
+    template<class Tag>
+        struct is_allow<Tag, void>
+        {
+            static const bool value = true;
+        };
+
 
     template<typename Value>
         struct buffer
@@ -1069,7 +1196,15 @@ namespace msgpack {
             }
 
             template<class Tag>
-                void read_from(Tag &tag, reader_t &reader)
+                void read_from(Tag &tag, reader_t &reader, 
+                        typename std::enable_if<!is_allow<Tag, Value>::value>::type* =0)
+                {
+                    throw incompatible_unpack_type(__FUNCTION__);
+                }
+
+            template<class Tag>
+                void read_from(Tag &tag, reader_t &reader,
+                        typename std::enable_if<is_allow<Tag, Value>::value>::type* = 0)
                 {
                     read_and_assign(tag, reader,
                             m_p, 
@@ -1181,170 +1316,6 @@ namespace msgpack {
 
             return *this;
         }
-
-        unpacker& unpack_to_bool(bool &b)
-        {
-            auto head_byte=peek_byte();
-            switch(head_byte)
-            {
-                case true_tag::bits:
-                    b=true;
-                    break;
-
-                case false_tag::bits:
-                    b=false;
-                    break;
-
-                default:
-                    throw incompatible_unpack_type(__FUNCTION__);
-            }
-            read_byte();
-            return *this;
-        }
-
-        template<typename T>
-            unpacker& unpack_to_arithmetic(T &t, typename std::enable_if<std::is_arithmetic<T>::value>::type* =0)
-        {
-            if(!is_arithmetic()){
-                throw incompatible_unpack_type(__FUNCTION__);
-            }
-
-            auto b=create_buffer(t);
-            auto head_byte=read_byte();
-            switch(head_byte)
-            {
-                case float32_tag::bits:
-                    b.read_from(float32_tag(), m_reader);
-                    break;
-
-                case float64_tag::bits:
-                    b.read_from(float64_tag(), m_reader);
-                    break;
-
-                case uint8_tag::bits:
-                    b.read_from(uint8_tag(), m_reader);
-                    break;
-
-                case uint16_tag::bits:
-                    b.read_from(uint16_tag(), m_reader);
-                    break;
-
-                case uint32_tag::bits:
-                    b.read_from(uint32_tag(), m_reader);
-                    break;
-
-                case uint64_tag::bits:
-                    b.read_from(uint64_tag(), m_reader);
-                    break;
-
-                case int8_tag::bits:
-                    b.read_from(int8_tag(), m_reader);
-                    break;
-
-                case int16_tag::bits:
-                    b.read_from(int16_tag(), m_reader);
-                    break;
-
-                case int32_tag::bits:
-                    b.read_from(int32_tag(), m_reader);
-                    break;
-
-                case int64_tag::bits:
-                    b.read_from(int64_tag(), m_reader);
-                    break;
-
-                default:
-                    if(positive_fixint_tag::is_match(head_byte)){
-                        // char
-                        b.read_from(positive_fixint_tag(head_byte), m_reader);
-                    }
-                    else if(negative_fixint_tag::is_match(head_byte)){
-                        // uchar
-                        b.read_from(negative_fixint_tag(head_byte), m_reader);
-                    }
-                    else{
-                        throw invalid_head_byte(__FUNCTION__);
-                    }
-                    break;
-            }
-
-            return *this;
-        }
-
-        // todo: range
-        template<typename T>
-            unpacker& unpack_to_sequence(T &t)
-            {
-                if(!is_sequence()){
-                    throw incompatible_unpack_type(__FUNCTION__);
-                }
-
-				auto b = create_buffer(t);
-
-                auto head_byte=read_byte();
-                switch(head_byte)
-                {
-                    case bin8_tag::bits:
-                        {
-                            unsigned char len;
-                            read_value<unsigned char>(&len);
-                            b.read_from(bin8_tag(len), m_reader);
-                        }
-                        break;
-
-                    case bin16_tag::bits:
-                        {
-                            unsigned short len;
-                            read_value<unsigned short>(&len);
-                            b.read_from(bin16_tag(len), m_reader);
-                        }
-                        break;
-
-                    case bin32_tag::bits:
-                        {
-                            unsigned int len;
-                            read_value<unsigned int>(&len);
-                            b.read_from(bin32_tag(len), m_reader);
-                        }
-                        break;
-
-                    case str8_tag::bits:
-                        {
-                            unsigned char len;
-                            read_value<unsigned char>(&len);
-                            b.read_from(str8_tag(len), m_reader);
-                        }
-                        break;
-
-                    case str16_tag::bits:
-                        {
-                            unsigned short len;
-                            read_value<unsigned short>(&len);
-                            b.read_from(str16_tag(len), m_reader);
-                        }
-                        break;
-
-                    case str32_tag::bits:
-                        {
-                            unsigned int len;
-                            read_value<unsigned int>(&len);
-                            b.read_from(str32_tag(len), m_reader);
-                        }
-                        break;
-
-                    default:
-                        if(fixstr_tag::is_match(head_byte)){
-                            auto len=extract_head_byte<fixstr_tag>(head_byte);
-                            b.read_from(fixstr_tag(len), m_reader);
-                        }
-                        else {
-                            throw invalid_head_byte(__FUNCTION__);
-                        }
-                        break;
-                }
-
-                return *this;
-            }
 
         template<class BUFFER>
             unpacker& unpack(BUFFER &b)
