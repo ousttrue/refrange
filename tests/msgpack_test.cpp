@@ -58,7 +58,7 @@ TEST(MsgpackTest, small_int)
 
     // check
     ASSERT_EQ(1, p.size());
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::positive_fixint_tag>(*p.pointer()));
+	ASSERT_TRUE(mpack::msgpack::positive_fixint_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
@@ -79,7 +79,7 @@ TEST(MsgpackTest, small_negative_int)
 
     // check
     ASSERT_EQ(1, p.size());
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::negative_fixint_tag>(*p.pointer()));
+	ASSERT_TRUE(mpack::msgpack::negative_fixint_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
@@ -348,7 +348,7 @@ TEST(MsgpackTest, fixstr)
 
     // check
     ASSERT_EQ(1+3, p.size());
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixstr_tag>(*p.pointer()));
+	ASSERT_TRUE(mpack::msgpack::fixstr_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
@@ -538,7 +538,7 @@ TEST(MsgpackTest, fixarray)
 
 
     // check
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixarray_tag>(*p.pointer()));
+	ASSERT_TRUE(mpack::msgpack::fixarray_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
@@ -645,7 +645,7 @@ TEST(MsgpackTest, fixmap)
 		;
 
     // check
-	ASSERT_TRUE(mpack::msgpack::partial_bit_equal<mpack::msgpack::fixmap_tag>(*p.pointer()));
+	ASSERT_TRUE(mpack::msgpack::fixmap_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());

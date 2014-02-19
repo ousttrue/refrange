@@ -17,13 +17,13 @@ enum typecategory_t
 
 inline typecategory_t typecategory(unsigned char b)
 {
-    if(partial_bit_equal<positive_fixint_tag>(b)){
+    if(positive_fixint_tag::is_match(b)){
         return typecategory_int;
     }
-	if (partial_bit_equal<negative_fixint_tag>(b)){
+	if (negative_fixint_tag::is_match(b)){
         return typecategory_int;
     }
-	if (partial_bit_equal<fixstr_tag>(b)){
+	if (fixstr_tag::is_match(b)){
         return typecategory_string;
     }
 
