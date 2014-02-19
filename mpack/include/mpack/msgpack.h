@@ -13,32 +13,268 @@ namespace mpack {
 namespace msgpack {
 
     //////////////////////////////////////////////////////////////////////////////
-    // core
+    // message
     //////////////////////////////////////////////////////////////////////////////
-    struct positive_fixint
+    struct nil_tag
+    {
+        enum bits_t { bits=0xc0 };
+        typedef void read_type;
+    };
+
+    struct false_tag
+    {
+        enum bits_t { bits=0xc2 };
+        typedef void read_type;
+    };
+
+    struct true_tag
+    {
+        enum bits_t { bits=0xc3 };
+        typedef void read_type;
+    };
+
+    struct bin8_tag
+    {
+        enum bits_t { bits=0xc4 };
+        typedef void read_type;
+    };
+
+    struct bin16_tag
+    {
+        enum bits_t { bits=0xc5 };
+        typedef void read_type;
+    };
+
+    struct bin32_tag
+    {
+        enum bits_t { bits=0xc6 };
+        typedef void read_type;
+    };
+
+    struct ext8_tag
+    {
+        enum bits_t { bits=0xc7 };
+        typedef void read_type;
+    };
+
+    struct ext16_tag
+    {
+        enum bits_t { bits=0xc8 };
+        typedef void read_type;
+    };
+
+    struct ext32_tag
+    {
+        enum bits_t { bits=0xc9 };
+        typedef void read_type;
+    };
+
+    struct float32_tag
+    {
+        enum bits_t { bits=0xca };
+        typedef float read_type;
+    };
+
+    struct float64_tag
+    {
+        enum bits_t { bits=0xcb };
+        typedef double read_type;
+    };
+
+    struct uint8_tag
+    {
+        enum bits_t { bits=0xcc };
+        typedef unsigned char read_type;
+    };
+
+    struct uint16_tag
+    {
+        enum bits_t { bits=0xcd };
+        typedef unsigned short read_type;
+    };
+
+    struct uint32_tag
+    {
+        enum bits_t { bits=0xce };
+        typedef unsigned int read_type;
+    };
+
+    struct uint64_tag
+    {
+        enum bits_t { bits=0xcf };
+        typedef unsigned long long read_type;
+    };
+
+    struct int8_tag
+    {
+        enum bits_t { bits=0xd0 };
+        typedef char read_type;
+    };
+
+    struct int16_tag
+    {
+        enum bits_t { bits=0xd1 };
+        typedef short read_type;
+    };
+
+    struct int32_tag
+    {
+        enum bits_t { bits=0xd2 };
+        typedef int read_type;
+    };
+
+    struct int64_tag
+    {
+        enum bits_t { bits=0xd3 };
+        typedef long long read_type;
+    };
+
+    struct fixext1_tag
+    {
+        enum bits_t { bits=0xd4 };
+        typedef void read_type;
+    };
+
+    struct fixext2_tag
+    {
+        enum bits_t { bits=0xd5 };
+        typedef void read_type;
+    };
+
+    struct fixext4_tag
+    {
+        enum bits_t { bits=0xd6 };
+        typedef void read_type;
+    };
+
+    struct fixext8_tag
+    {
+        enum bits_t { bits=0xd7 };
+        typedef void read_type;
+    };
+
+    struct fixext16_tag
+    {
+        enum bits_t { bits=0xd8 };
+        typedef void read_type;
+    };
+
+    struct str8_tag
+    {
+        enum bits_t { bits=0xd9 };
+        typedef void read_type;
+    };
+
+    struct str16_tag
+    {
+        enum bits_t { bits=0xda };
+        typedef void read_type;
+    };
+
+    struct str32_tag
+    {
+        enum bits_t { bits=0xdb };
+        typedef void read_type;
+    };
+
+    struct array16_tag
+    {
+        enum bits_t { bits=0xdc };
+        typedef void read_type;
+
+        unsigned short len;
+        array16_tag(unsigned short l)
+            : len(l)
+        {}
+    };
+
+    struct array32_tag
+    {
+        enum bits_t { bits=0xdd };
+        typedef void read_type;
+
+        unsigned int len;
+        array32_tag(unsigned int l)
+            : len(l)
+        {}
+    };
+
+    struct map16_tag
+    {
+        enum bits_t { bits=0xde };
+        typedef void read_type;
+
+        unsigned short len;
+        map16_tag(unsigned short l)
+            : len(l)
+        {}
+    };
+
+    struct map32_tag
+    {
+        enum bits_t { bits=0xdf };
+        typedef void read_type;
+
+        unsigned int len;
+        map32_tag(unsigned int l)
+            : len(l)
+        {}
+    };
+
+    struct positive_fixint_tag
     {
         enum bits_t { bits=0x00 };
         enum mask_t { mask=0x80 };
+        typedef void read_type;
+
+        unsigned char head_byte;
+        positive_fixint_tag(unsigned char b)
+            : head_byte(b)
+        {}
     };
-    struct fixmap
+    struct fixmap_tag
     {
         enum bits_t { bits=0x80 };
         enum mask_t { mask=0xF0 };
+        typedef void read_type;
+
+        unsigned char head_byte;
+        fixmap_tag(unsigned char b)
+            : head_byte(b)
+        {}
     };
-    struct fixarray
+    struct fixarray_tag
     {
         enum bits_t { bits=0x90 };
         enum mask_t { mask=0xf0 };
+        typedef void read_type;
+
+        unsigned char head_byte;
+        fixarray_tag(unsigned char b)
+            : head_byte(b)
+        {}
     };
-    struct fixstr
+    struct fixstr_tag
     {
         enum bits_t { bits=0xa0 };
         enum mask_t { mask=0xe0};
+        typedef void read_type;
+
+        unsigned char head_byte;
+        fixstr_tag(unsigned char b)
+            : head_byte(b)
+        {}
     };
-    struct negative_fixint
+    struct negative_fixint_tag
     {
         enum bits_t { bits=0xe0 };
         enum mask_t { mask=0xe0 };
+        typedef void read_type;
+
+        unsigned char head_byte;
+        negative_fixint_tag(unsigned char b)
+            : head_byte(b)
+        {}
     };
 
     template<class T>
@@ -53,48 +289,24 @@ namespace msgpack {
             return static_cast<char>(byte & ~T::mask);
         }
 
-    enum byte_type
-    {
-        byte_nil=0xc0,
-        byte_false=0xc2,
-        byte_true=0xc3,
-        byte_bin8=0xc4,
-        byte_bin16=0xc5,
-        byte_bin32=0xc6,
-        byte_ext8=0xc7,
-        byte_ext16=0xc8,
-        byte_ext32=0xc9,
-        byte_float32=0xca,
-        byte_float64=0xcb,
-        byte_uint8=0xcc,
-        byte_uint16=0xcd,
-        byte_uint32=0xce,
-        byte_uint64=0xcf,
-        byte_int8=0xd0,
-        byte_int16=0xd1,
-        byte_int32=0xd2,
-        byte_int64=0xd3,
-        byte_fixext1=0xd4,
-        byte_fixext2=0xd5,
-        byte_fixext4=0xd6,
-        byte_fixext8=0xd7,
-        byte_fixext16=0xd8,
-        byte_str8=0xd9,
-        byte_str16=0xda,
-        byte_str32=0xdb,
-        byte_array16=0xdc,
-        byte_array32=0xdd,
-        byte_map16=0xde,
-        byte_map32=0xdf,
-    };
 
-    enum nil_t {
-        nil
-    };
+		struct type_unknown_tag{};
+		struct type_primitive_tag{};
+
+		// default
+		template <class T>
+		struct traits
+		{
+			typedef type_unknown_tag value_tag;
+		};
+
+
+
 
     //////////////////////////////////////////////////////////////////////////////
     // packer
     //////////////////////////////////////////////////////////////////////////////
+    typedef std::function<size_t(unsigned char*, size_t)> reader_t;
     struct collection_context
     {
         enum collection_t
@@ -125,6 +337,11 @@ namespace msgpack {
 			: type(_type), size(_size), p(_p), len(_len)
 		{
 		}
+
+		template<class TAG>
+        void read_from(TAG &tag, reader_t &reader, unsigned int count=0)
+        {
+        }
     };
 
 
@@ -172,13 +389,18 @@ namespace msgpack {
 
         packer& pack_nil()
         {
-            write_head_byte(byte_nil);
+            write_head_byte<nil_tag>();
             return *this;
         }
 
         packer& pack_bool(bool b)
         {
-            write_head_byte(b ? byte_true : byte_false);
+			if (b){
+				write_head_byte<true_tag>();
+			}
+			else{
+				write_head_byte<false_tag>();
+			}
             return *this;
         }
 
@@ -189,31 +411,31 @@ namespace msgpack {
                 if(n>-0x1f){
                     // negative fix int
                     new_item();
-                    auto v = negative_fixint::bits | -static_cast<char>(n);
+                    auto v = negative_fixint_tag::bits | -static_cast<char>(n);
                     write_value(static_cast<char>(v));
                     return *this;
                 }
                 if(n>-0xff){
                     // int8
-                    write_head_byte(byte_int8);
+                    write_head_byte<int8_tag>();
                     write_value(static_cast<char>(n));
                     return *this;
                 }
                 if(n>-0xffff){
                     // int16
-                    write_head_byte(byte_int16);
+                    write_head_byte<int16_tag>();
                     write_value(static_cast<short>(n));
                     return *this;
                 }
                 if(n>-((long long)0xffffffff)){
                     // int32
-                    write_head_byte(byte_int32);
+                    write_head_byte<int32_tag>();
                     write_value(static_cast<int>(n));
                     return *this;
                 }
                 else{
                     // int64
-                    write_head_byte(byte_int64);
+                    write_head_byte<int64_tag>();
                     write_value(static_cast<long long>(n));
                     return *this;
                 }
@@ -227,25 +449,25 @@ namespace msgpack {
                 }
                 else if(n<=0xff){
                     // uint8
-                    write_head_byte(byte_uint8);
+                    write_head_byte<uint8_tag>();
                     write_value(static_cast<unsigned char>(n));
                     return *this;
                 }
                 if(n<=0xffff){
                     // uint16
-                    write_head_byte(byte_uint16);
+                    write_head_byte<uint16_tag>();
                     write_value(static_cast<unsigned short>(n));
                     return *this;
                 }
                 else if(n<=0xffffffff){
                     // uint32
-                    write_head_byte(byte_uint32);
+                    write_head_byte<uint32_tag>();
                     write_value(static_cast<unsigned int>(n));
                     return *this;
                 }
                 else{
                     // uint64
-                    write_head_byte(byte_uint64);
+                    write_head_byte<uint64_tag>();
                     write_value(static_cast<unsigned long long>(n));
                     return *this;
                 }
@@ -254,14 +476,14 @@ namespace msgpack {
 
         packer& pack_float(float n)
         {
-            write_head_byte(byte_float32);
+            write_head_byte<float32_tag>();
             write_value(n);
             return *this;
         }
 
         packer& pack_double(double n)
         {
-            write_head_byte(byte_float64);
+            write_head_byte<float64_tag>();
             write_value(n);
             return *this;
         }
@@ -276,28 +498,28 @@ namespace msgpack {
             if(len<32){
                 // fixstr
                 new_item();
-                auto v = fixstr::bits | len;
+                auto v = fixstr_tag::bits | len;
                 write_value(static_cast<char>(v));
                 size_t size=write((const unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xff){
                 // str8
-                write_head_byte(byte_str8);
+                write_head_byte<str8_tag>();
                 write_value(static_cast<unsigned char>(len));
                 size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffff){
                 // str16
-                write_head_byte(byte_str16);
+                write_head_byte<str16_tag>();
                 write_value(static_cast<unsigned short>(len));
                 size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffffffff){
                 // str32
-                write_head_byte(byte_str32);
+                write_head_byte<str32_tag>();
                 write_value(static_cast<unsigned int>(len));
                 size_t size=write((unsigned char*)p, len);
                 assert(size==len);
@@ -312,21 +534,21 @@ namespace msgpack {
         {
             if(len<0xff){
                 // bin8
-                write_head_byte(byte_bin8);
+                write_head_byte<bin8_tag>();
                 write_value(static_cast<unsigned char>(len));
                 size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffff){
                 // bin16
-                write_head_byte(byte_bin16);
+                write_head_byte<bin16_tag>();
                 write_value(static_cast<unsigned short>(len));
                 size_t size=write((unsigned char*)p, len);
                 assert(size==len);
             }
             else if(len<0xffffffff){
                 // bin32
-                write_head_byte(byte_bin32);
+                write_head_byte<bin32_tag>();
                 write_value(static_cast<unsigned int>(len));
                 size_t size=write((unsigned char*)p, len);
                 assert(size==len);
@@ -348,18 +570,18 @@ namespace msgpack {
                     // fixarray
                     new_item();
                     m_nestItemCounts.push_back(ItemCount(c.size));
-                    auto v = fixarray::bits | c.size;
+                    auto v = fixarray_tag::bits | c.size;
                     write_value(static_cast<char>(v));
                 }
                 else if(c.size<0xFFFF){
                     // array16
-                    write_head_byte(byte_array16);
+                    write_head_byte<array16_tag>();
                     m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned short>(c.size));
                 }
                 else if(c.size<0xFFFFFFFF){
                     // array32
-                    write_head_byte(byte_array32);
+                    write_head_byte<array32_tag>();
                     m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned int>(c.size));
                 }
@@ -374,18 +596,18 @@ namespace msgpack {
                     // fixmap
                     new_item();
                     m_nestItemCounts.push_back(ItemCount(c.size));
-                    auto v = fixmap::bits | pairs;
+                    auto v = fixmap_tag::bits | pairs;
                     write_value(static_cast<char>(v));
                 }
                 else if(c.size<0xFFFF){
                     // map16
-                    write_head_byte(byte_map16);
+                    write_head_byte<map16_tag>();
                     m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned short>(pairs));
                 }
                 else if(c.size<0xFFFFFFFF){
                     // map32
-                    write_head_byte(byte_map32);
+                    write_head_byte<map32_tag>();
                     m_nestItemCounts.push_back(ItemCount(c.size));
                     write_value(static_cast<unsigned int>(pairs));
                 }
@@ -408,10 +630,11 @@ namespace msgpack {
         }
 
 //private:
-        void write_head_byte(byte_type head_byte)
+		template<class TAG>
+        void write_head_byte()
         {
             new_item();
-            write_value(static_cast<unsigned char>(head_byte));
+            write_value(TAG::bits);
         }
 
         template<typename T>
@@ -454,7 +677,7 @@ namespace msgpack {
     }
 
     // nil
-    inline packer& operator<<(packer &packer, nil_t nil) { return packer.pack_nil(); }
+    inline packer& operator<<(packer &packer, nil_tag nil) { return packer.pack_nil(); }
 
     // bool
     inline packer& operator<<(packer &packer, bool t) { return packer.pack_bool(t); }
@@ -490,7 +713,81 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // unpacker
     //////////////////////////////////////////////////////////////////////////////
-    typedef std::function<size_t(unsigned char*, size_t)> reader_t;
+	extern void * enabler;
+
+	template <class TAG, typename VALUE
+        , typename std::enable_if<!std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
+		, typename std::enable_if<std::is_arithmetic<VALUE>::value>::type *& = enabler
+	>
+	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
+	{
+        throw std::exception(__FUNCTION__);
+	}
+
+	template <class TAG, typename VALUE
+		, typename std::enable_if<std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
+		, typename std::enable_if<!std::is_arithmetic<VALUE>::value>::type *& = enabler
+		>
+	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
+	{
+        throw std::exception(__FUNCTION__);
+	}
+
+	template <class TAG, typename VALUE
+		, typename std::enable_if<!std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
+		, typename std::enable_if<!std::is_arithmetic<VALUE>::value>::type *& = enabler
+	>
+	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
+	{
+		throw std::exception(__FUNCTION__);
+	}
+
+	template <class TAG, typename VALUE
+		, typename std::enable_if<std::is_arithmetic<typename TAG::read_type>::value>::type *& = enabler
+		, typename std::enable_if<std::is_arithmetic<VALUE>::value>::type *& = enabler
+		>
+	void read_body_from(TAG &tag, reader_t &reader, VALUE &v)
+	{
+        TAG::read_type t;
+        auto size = reader((unsigned char*)&t, sizeof(t));
+        assert(size == sizeof(t));
+        v = static_cast<VALUE>(t);
+	}
+
+    template<typename T>
+	struct buffer
+    {
+        T &m_p;
+
+		buffer(T &p)
+            : m_p(p)
+        {
+        }
+
+        template<class TAG>
+        void read_from(TAG &tag, reader_t &reader, unsigned int count=0)
+        {
+			assert(count == 0);
+
+			read_body_from(tag, reader, m_p);
+        }
+    };
+
+	struct dummy_buffer
+    {
+        template<class TAG>
+        void read_from(TAG &tag, reader_t &reader, unsigned int count=0)
+        {
+        }
+    };
+
+
+    template<typename T>
+    inline buffer<T> create_buffer(T &t)
+    {
+        return buffer<T>(t);
+    }
+
 
     class unpacker
     {
@@ -514,377 +811,213 @@ namespace msgpack {
             return m_peek_byte;
         }
 
-        byte_type read_head_byte()
+        unsigned char read_head_byte()
         {
 			unsigned char c;
 			read_value<unsigned char>(&c);
-            return static_cast<byte_type>(c);
+            return c;
         }
 
-		/*
-        unpacker& unpack(writer_t writer)
+        template<class BUFFER>
+        unpacker& unpack(BUFFER &b)
         {
             auto head_byte=read_head_byte();
             switch(head_byte)
             {
-            }
-
-            return *this;
-        }
-		*/
-
-        unpacker& unpack_nil()
-        {
-            assert(is_nil());
-            // drop a byte
-			unsigned char c;
-            read_value<unsigned char>(&c);
-			return *this;
-        }
-
-        unpacker& unpack_bool(bool &t)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_true:
-                    t=true;
+                case nil_tag::bits:
+                    b.read_from(nil_tag(), m_reader);
                     break;
 
-                case byte_false:
-                    t=false;
+                case false_tag::bits:
+                    b.read_from(false_tag(), m_reader);
                     break;
 
-                default:
-                    throw std::invalid_argument(__FUNCTION__);
-            }
-            return *this;
-        }
-
-        unpacker& unpack_float(float &t)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_float32:
-                    read_value<float>(&t);
+                case true_tag::bits:
+                    b.read_from(true_tag(), m_reader);
                     break;
 
-                case byte_float64:
-                    throw std::range_error(__FUNCTION__);
-
-                default:
-                    throw std::exception("not implemented. at " __FUNCTION__);
-            }
-
-            return *this;
-        }
-
-        unpacker& unpack_float(double &t)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_float32:
-					{
-						float f;
-						read_value<float>(&f);
-						t=f;
-					}
+				case float32_tag::bits:
+                    b.read_from(false_tag(), m_reader);
                     break;
 
-                case byte_float64:
-					{
-						double d;
-						read_value<double>(&d);
-						t=d;
-					}
+				case float64_tag::bits:
+                    b.read_from(float64_tag(), m_reader);
                     break;
 
-                default:
-                    throw std::exception("not implemented. at " __FUNCTION__);
-            }
-
-            return *this;
-        }
-
-        template<typename T>
-		unpacker &unpack_int(T &t, typename std::enable_if<std::is_signed<T>::value>::type * = 0)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_uint8:
-					{
-						unsigned char u;
-						read_value<unsigned char>(&u);
-						t=u;
-					}
+				case uint8_tag::bits:
+                    b.read_from(uint8_tag(), m_reader);
                     break;
 
-                case byte_uint16:
-                    if(sizeof(T)<2){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						unsigned short u;
-						read_value<unsigned short>(&u);
-                        t=static_cast<T>(u);
-                    }
+				case uint16_tag::bits:
+                    b.read_from(uint16_tag(), m_reader);
                     break;
 
-                case byte_uint32:
-                    if(sizeof(T)<4){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						unsigned int u;
-						read_value<unsigned int>(&u);
-                        t=static_cast<T>(u);
-                    }
+				case uint32_tag::bits:
+                    b.read_from(uint32_tag(), m_reader);
                     break;
 
-                case byte_uint64:
-                    if(sizeof(T)<8){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						unsigned long long u;
-						read_value<unsigned long long>(&u);
-                        t=static_cast<T>(u);
-                    }
+				case uint64_tag::bits:
+                    b.read_from(uint64_tag(), m_reader);
                     break;
 
-                case byte_int8:
-					{
-						char c;
-						read_value<char>(&c);
-						t=static_cast<T>(c);
-					}
+				case int8_tag::bits:
+                    b.read_from(int8_tag(), m_reader);
                     break;
 
-                case byte_int16:
-                    if(sizeof(T)<2){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						short s;
-						read_value<short>(&s);
-                        t=static_cast<T>(s);
-                    }
+				case int16_tag::bits:
+                    b.read_from(int16_tag(), m_reader);
                     break;
 
-                case byte_int32:
-                    if(sizeof(T)<4){
-                        throw std::exception("range check ?");
-                    }
-                    else {
-						int s;
-						read_value<int>(&s);
-                        t=static_cast<T>(s);
-                    }
+				case int32_tag::bits:
+                    b.read_from(int32_tag(), m_reader);
                     break;
 
-                case byte_int64:
-                    if(sizeof(T)<8){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						long long s;
-						read_value<long long>(&s);
-                        t=static_cast<T>(s);
-                    }
+				case int64_tag::bits:
+                    b.read_from(int64_tag(), m_reader);
                     break;
 
-                default:
-                    if(partial_bit_equal<positive_fixint>(head_byte)){
-                        t=static_cast<char>(head_byte);
-                    }
-                    else if(partial_bit_equal<negative_fixint>(head_byte)){
-                        t=-extract_head_byte<negative_fixint>(head_byte);
-                    }
-                    else{
-                        throw std::exception("not implemented. at " __FUNCTION__);
-                    }
-                    break;
-            }
-
-            return *this;
-        }
-
-        template<typename T>
-		unpacker &unpack_int(T &t, typename std::enable_if<std::is_unsigned<T>::value>::type * = 0)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_uint8:
-					{
-						unsigned char u;
-						read_value<unsigned char>(&u);
-						t=u;
-					}
-                    break;
-
-                case byte_uint16:
-                    if(sizeof(T)<2){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						unsigned short u;
-						read_value<unsigned short>(&u);
-                        t=static_cast<T>(u);
-                    }
-                    break;
-
-                case byte_uint32:
-                    if(sizeof(T)<4){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						unsigned int u;
-						read_value<unsigned int>(&u);
-                        t=static_cast<T>(u);
-                    }
-                    break;
-
-                case byte_uint64:
-                    if(sizeof(T)<8){
-                        throw std::exception("range check ?");
-                    }
-                    else{
-						unsigned long long u;
-						read_value<unsigned long long>(&u);
-                        t=static_cast<T>(u);
-                    }
-                    break;
-
-                default:
-                    if(partial_bit_equal<positive_fixint>(head_byte)){
-                        t=static_cast<char>(head_byte);
-                    }
-                    else if(partial_bit_equal<negative_fixint>(head_byte)){
-                        t=-extract_head_byte<negative_fixint>(head_byte);
-                    }
-                    else{
-                        throw std::exception("not implemented. at " __FUNCTION__);
-                    }
-                    break;
-            }
-
-            return *this;
-        }
-
-        unpacker& unpack_string(std::string &s)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_str8:
+                    // sequence
+				case bin8_tag::bits:
                     {
 						unsigned char len;
                         read_value<unsigned char>(&len);
-                        s.reserve(len);
-                        for(size_t i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            s.push_back(c);
-                        }
+                        b.read_from(bin8_tag(), m_reader, len);
                     }
                     break;
 
-                case byte_str16:
+				case bin16_tag::bits:
                     {
 						unsigned short len;
                         read_value<unsigned short>(&len);
-                        s.reserve(len);
-                        for(size_t i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            s.push_back(c);
-                        }
+                        b.read_from(bin16_tag(), m_reader, len);
                     }
                     break;
 
-                case byte_str32:
-                    {
-                        unsigned int len;
-						read_value<unsigned int>(&len);
-                        s.reserve(len);
-                        for(size_t i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            s.push_back(c);
-                        }
-                    }
-                    break;
-
-                default:
-                    if(partial_bit_equal<fixstr>(head_byte)){
-						// fixstr
-                        auto len=extract_head_byte<fixstr>(head_byte);
-                        s.reserve(len);
-                        for(int i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            s.push_back(c);
-                        }
-                    }
-                    else{
-                        throw std::exception("not implemented. at " __FUNCTION__);
-                    }
-                    break;
-            }
-
-            return *this;
-        }
-
-        unpacker& unpack_bin(std::vector<unsigned char> &b)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_bin8:
-                    {
-						unsigned char len;
-                        read_value<unsigned char>(&len);
-                        b.reserve(len);
-                        for(size_t i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            b.push_back(c);
-                        }
-                    }
-                    break;
-
-                case byte_bin16:
-                    {
-						unsigned short len;
-                        read_value<unsigned short>(&len);
-                        b.reserve(len);
-                        for(size_t i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            b.push_back(c);
-                        }
-                    }
-                    break;
-
-                case byte_bin32:
+				case bin32_tag::bits:
                     {
 						unsigned int len;
                         read_value<unsigned int>(&len);
-                        b.reserve(len);
-                        for(size_t i=0; i<len; ++i){
-							char c;
-							read_value<char>(&c);
-                            b.push_back(c);
+                        b.read_from(bin32_tag(), m_reader, len);
+                    }
+                    break;
+
+				case str8_tag::bits:
+                    {
+                        unsigned char len;
+                        read_value<unsigned char>(&len);
+                        b.read_from(str8_tag(), m_reader, len);
+                    }
+                    break;
+
+				case str16_tag::bits:
+                    {
+                        unsigned short len;
+                        read_value<unsigned short>(&len);
+                        b.read_from(str16_tag(), m_reader, len);
+                    }
+                    break;
+
+				case str32_tag::bits:
+                    {
+                        unsigned int len;
+                        read_value<unsigned int>(&len);
+                        b.read_from(str32_tag() ,m_reader, len);
+                    }
+                    break;
+
+                    // collection
+				case array16_tag::bits:
+					{
+                        unsigned short len;
+                        read_value<unsigned short>(&len);
+                        b.read_from(array16_tag(len), m_reader);
+                        for(unsigned short i=0; i<len; ++i){
+                            unpack(b);
                         }
                     }
                     break;
 
+				case array32_tag::bits:
+					{
+						unsigned int len;
+						read_value<unsigned int>(&len);
+                        b.read_from(array32_tag(len), m_reader);
+                        for(unsigned int i=0; i<len; ++i){
+                            unpack(b);
+                        }
+					}
+                    break;
+
+				case map16_tag::bits:
+					{
+						unsigned short len;
+						read_value<unsigned short>(&len);
+                        b.read_from(map16_tag(len), m_reader);
+                        for(unsigned short i=0; i<len; ++i){
+                            unpack(b); // key
+                            unpack(b); // value
+                        }
+					}
+                    break;
+
+				case map32_tag::bits:
+					{
+						unsigned int len;
+						read_value<unsigned int>(&len);
+                        b.read_from(map32_tag(len), m_reader);
+                        for(unsigned int i=0; i<len; ++i){
+                            unpack(b); // key
+                            unpack(b); // value
+                        }
+					}
+                    break;
+
+                case ext8_tag::bits:
+                case ext16_tag::bits:
+                case ext32_tag::bits:
+                case fixext1_tag::bits:
+                case fixext2_tag::bits:
+                case fixext4_tag::bits:
+                case fixext8_tag::bits:
+                case fixext16_tag::bits:
+                    // not implmented
+                    throw std::exception(__FUNCTION__);
+
                 default:
-                    throw std::exception("not implemented. at " __FUNCTION__);
+                    if(partial_bit_equal<positive_fixint_tag>(head_byte)){
+                        // char
+                        b.read_from(positive_fixint_tag(head_byte), m_reader);
+                    }
+                    else if(partial_bit_equal<negative_fixint_tag>(head_byte)){
+                        // uchar
+                        b.read_from(negative_fixint_tag(head_byte), m_reader);
+                    }
+                    else if(partial_bit_equal<fixstr_tag>(head_byte)){
+                        // str todo
+                        auto len=extract_head_byte<fixstr_tag>(head_byte);
+                        b.read_from(fixstr_tag(head_byte), m_reader, len);
+                    }
+                    else if(partial_bit_equal<fixarray_tag>(head_byte)){
+                        // collection
+                        unsigned char len=extract_head_byte<fixarray_tag>(head_byte);
+                        b.read_from(fixarray_tag(head_byte), m_reader, len);
+                        for(unsigned char i=0; i<len; ++i){
+                            unpack(b);
+                        }
+                    }
+                    else if(partial_bit_equal<fixmap_tag>(head_byte)){
+                        // collection
+                        unsigned char len=extract_head_byte<fixmap_tag>(head_byte);
+                        b.read_from(fixmap_tag(head_byte), m_reader, len);
+                        for(unsigned char i=0; i<len; ++i){
+                            unpack(b); // key
+                            unpack(b); // value
+                        }
+                    }
+                    else {
+                        throw std::invalid_argument(__FUNCTION__);
+                    }
+                    break;
             }
 
             return *this;
@@ -893,7 +1026,7 @@ namespace msgpack {
         bool is_nil()
         {
             auto head_byte=peek_byte();
-            return head_byte==byte_nil; 
+            return head_byte==nil_tag::bits; 
         }
 
         bool is_array()
@@ -901,11 +1034,11 @@ namespace msgpack {
             auto head_byte=peek_byte();
             switch(head_byte)
             {
-                case byte_array16:
-                case byte_array32:
+                case array16_tag::bits:
+                case array32_tag::bits:
                     return true;
             }
-            return partial_bit_equal<fixarray>(head_byte);
+            return partial_bit_equal<fixarray_tag>(head_byte);
         }
 
         bool is_map()
@@ -913,11 +1046,11 @@ namespace msgpack {
             auto head_byte=peek_byte();
             switch(head_byte)
             {
-                case byte_map16:
-                case byte_map32:
+                case map16_tag::bits:
+                case map32_tag::bits:
                     return true;
             }
-            return partial_bit_equal<fixmap>(head_byte);
+            return partial_bit_equal<fixmap_tag>(head_byte);
         }
 
         bool is_integer()
@@ -925,77 +1058,20 @@ namespace msgpack {
             auto head_byte=peek_byte();
             switch(head_byte)
             {
-                case byte_int8:
-                case byte_int16:
-                case byte_int32:
-                case byte_int64:
-                case byte_uint8:
-                case byte_uint16:
-                case byte_uint32:
-                case byte_uint64:
+                case int8_tag::bits:
+				case int16_tag::bits:
+				case int32_tag::bits:
+				case int64_tag::bits:
+				case uint8_tag::bits:
+				case uint16_tag::bits:
+				case uint32_tag::bits:
+				case uint64_tag::bits:
                     return true;
             }
-            return partial_bit_equal<positive_fixint>(head_byte)
-                || partial_bit_equal<negative_fixint>(head_byte);
+            return partial_bit_equal<positive_fixint_tag>(head_byte)
+                || partial_bit_equal<negative_fixint_tag>(head_byte);
         }
 
-        unpacker &unpack_collection(collection_context &c)
-        {
-            auto head_byte=read_head_byte();
-            switch(head_byte)
-            {
-                case byte_array16:
-					{
-						c.type=collection_context::collection_array;
-						unsigned short u;
-						read_value<unsigned short>(&u);
-						c.size=u;
-					}
-                    break;
-
-                case byte_array32:
-					{
-						c.type=collection_context::collection_array;
-						unsigned int u;
-						read_value<unsigned int>(&u);
-						c.size=u;
-					}
-                    break;
-
-                case byte_map16:
-					{
-						c.type=collection_context::collection_map;
-						unsigned short u;
-						read_value<unsigned short>(&u);
-						c.size=u;
-					}
-                    break;
-
-                case byte_map32:
-					{
-						c.type=collection_context::collection_map;
-						unsigned int u;
-						read_value<unsigned int>(&u);
-						c.size=u;
-					}
-                    break;
-
-                default:
-                    if(partial_bit_equal<fixarray>(head_byte)){
-                        c.type=collection_context::collection_array;
-                        c.size=extract_head_byte<fixarray>(head_byte);
-                    }
-                    else if(partial_bit_equal<fixmap>(head_byte)){
-                        c.type=collection_context::collection_map;
-                        c.size=extract_head_byte<fixmap>(head_byte);
-                    }
-                    else{
-						throw std::invalid_argument(__FUNCTION__);
-                    }
-            }
-
-            return *this;
-        }
     private:
         template<typename T, typename W>
         void read_value(W *w)
@@ -1027,32 +1103,32 @@ namespace msgpack {
     };
 
     // bool
-    inline unpacker& operator>>(unpacker &unpacker, bool &t) { return unpacker.unpack_bool(t); }
+    inline unpacker& operator>>(unpacker &unpacker, bool &t) { return unpacker.unpack(create_buffer(t)); }
 
     // signed
-    inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack_int(t); }
-    inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack_int(t); }
-    inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack_int(t); }
-    inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, char &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, short &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, int &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, long long &t) { return unpacker.unpack(create_buffer(t)); }
 
     // unsigned
-    inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack_int(t); }
-    inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack_int(t); }
-    inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack_int(t); }
-    inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack_int(t); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned char &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned short &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned int &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, unsigned long long &t) { return unpacker.unpack(create_buffer(t)); }
 
     // float
-    inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack_float(t); }
-    inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack_float(t); }
+    inline unpacker& operator>>(unpacker &unpacker, float &t) { return unpacker.unpack(create_buffer(t)); }
+    inline unpacker& operator>>(unpacker &unpacker, double &t) { return unpacker.unpack(create_buffer(t)); }
 
     // str
-    inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack_string(t); }
+    inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacker.unpack(create_buffer(t)); }
 
     // bin
-    inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack_bin(t); }
+    inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack(create_buffer(t)); }
 
-    // array
-    inline unpacker& operator>>(unpacker &unpacker, collection_context &t){ return unpacker.unpack_collection(t); }
+    // collection
+    inline unpacker& operator>>(unpacker &unpacker, collection_context &t){ return unpacker.unpack(t); }
 
     //////////////////////////////////////////////////////////////////////////////
     // utility

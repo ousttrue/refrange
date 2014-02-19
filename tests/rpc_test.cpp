@@ -54,7 +54,7 @@ TEST(RPC, fp_2to1)
     ASSERT_EQ(request_id, response_id);
 
     ASSERT_TRUE(response_unpacker.is_nil());
-    response_unpacker.unpack_nil();
+    response_unpacker.unpack(mpack::msgpack::dummy_buffer());
 
     int n;
     response_unpacker >> n;

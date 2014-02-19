@@ -17,64 +17,64 @@ enum typecategory_t
 
 inline typecategory_t typecategory(unsigned char b)
 {
-    if(partial_bit_equal<positive_fixint>(b)){
+    if(partial_bit_equal<positive_fixint_tag>(b)){
         return typecategory_int;
     }
-    if(partial_bit_equal<negative_fixint>(b)){
+	if (partial_bit_equal<negative_fixint_tag>(b)){
         return typecategory_int;
     }
-    if(partial_bit_equal<fixstr>(b)){
+	if (partial_bit_equal<fixstr_tag>(b)){
         return typecategory_string;
     }
 
     switch(b)
     {
-        case byte_nil: 
+        case nil_tag::bits: 
             return typecategory_null;
 
-        case byte_false:
-        case byte_true:
+        case false_tag::bits:
+        case true_tag::bits:
             return typecategory_bool;
 
-        case byte_bin8:
-        case byte_bin16:
-        case byte_bin32:
+        case bin8_tag::bits:
+        case bin16_tag::bits:
+        case bin32_tag::bits:
             return typecategory_byte_array;
 
-        case byte_float32:
-        case byte_float64:
+        case float32_tag::bits:
+        case float64_tag::bits:
             return typecategory_float;
 
-        case byte_uint8:
-        case byte_uint16:
-        case byte_uint32:
-        case byte_uint64:
-        case byte_int8:
-        case byte_int16:
-        case byte_int32:
-        case byte_int64:
+        case uint8_tag::bits:
+        case uint16_tag::bits:
+        case uint32_tag::bits:
+        case uint64_tag::bits:
+        case int8_tag::bits:
+        case int16_tag::bits:
+        case int32_tag::bits:
+        case int64_tag::bits:
             return typecategory_int;
 
-        case byte_str8:
-        case byte_str16:
-        case byte_str32:
+        case str8_tag::bits:
+        case str16_tag::bits:
+        case str32_tag::bits:
             return typecategory_string;
 
-        case byte_array16:
-        case byte_array32:
-        case byte_map16:
-        case byte_map32:
+        case array16_tag::bits:
+        case array32_tag::bits:
+        case map16_tag::bits:
+        case map32_tag::bits:
             return typecategory_collection;
 
             /*
-        case byte_ext8:
-        case byte_ext16:
-        case byte_ext32:
-        case byte_fixext1:
-        case byte_fixext2:
-        case byte_fixext4:
-        case byte_fixext8:
-        case byte_fixext16:
+        case ext8_tag::bits:
+        case ext16_tag::bits:
+        case ext32_tag::bits:
+        case fixext1_tag::bits:
+        case fixext2_tag::bits:
+        case fixext4_tag::bits:
+        case fixext8_tag::bits:
+        case fixext16_tag::bits:
             */
     }
 
