@@ -945,35 +945,6 @@ inline collection_context map(const packer &packer)
 //////////////////////////////////////////////////////////////////////////////
 // unpacker
 //////////////////////////////////////////////////////////////////////////////
-// assign_traits
-struct nocopy_tag{};
-struct arithmetic_copy_tag{};
-struct sequence_tag{};
-
-template<typename Value, class ValueEnable=void>
-struct assign_traits
-{
-    typedef nocopy_tag tag;
-};
-template<typename Value>
-struct assign_traits<Value
-, typename std::enable_if<std::is_arithmetic<Value>::value>::type
->
-{
-    typedef arithmetic_copy_tag tag;
-};
-template<>
-struct assign_traits<std::string>
-{
-    typedef sequence_tag tag;
-};
-template<>
-struct assign_traits<std::vector<unsigned char>>
-{
-    typedef sequence_tag tag;
-};
-
-
 struct base_buffer
 {
     template<class Tag>
