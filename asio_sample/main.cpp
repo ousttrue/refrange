@@ -6,6 +6,8 @@
 
 class rpc_connection
 {
+	std::string m_name;
+
     boost::asio::ip::tcp::socket m_socket;
     unsigned char m_read_buffer[1024];
     std::vector<unsigned char> m_unpack_buffer;
@@ -15,13 +17,19 @@ class rpc_connection
     struct Message
     {
         std::vector<unsigned char> request;
+
+		Message()
+		{}
+		Message(const unsigned char *p, size_t len)
+			: request(p, p+len)
+		{}
     };
     std::map<int, Message> m_messageMap;
 
 public:
-    rpc_connection(boost::asio::io_service &io_service, 
+    rpc_connection(const std::string &name, boost::asio::io_service &io_service, 
             std::shared_ptr<mpack::msgpack::rpc::dispatcher> d=0)
-        : m_socket(io_service), m_dispatcher(d), m_request_id(0)
+        : m_name(name), m_socket(io_service), m_dispatcher(d), m_request_id(0)
     {
     }
 
@@ -48,6 +56,8 @@ public:
 
     void begin_read()
     {
+        std::cout << m_name << ".begin_read" << std::endl;
+
         auto self=this;
         auto handle_read=[self](const boost::system::error_code& error, 
                 size_t bytes_transferred)
@@ -57,35 +67,76 @@ public:
                 return;
             }
 
-            std::cout << "read: " << bytes_transferred << std::endl;
+            std::cout << self->m_name << ".read: " << bytes_transferred << std::endl;
 
             std::copy(self->m_read_buffer, self->m_read_buffer+bytes_transferred, std::back_inserter(self->m_unpack_buffer));
             if(!self->m_unpack_buffer.empty()){
                 auto unpacker=mpack::msgpack::create_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
-                while(true)
+                while(!unpacker.range().is_end())
                 {
                     try {
-						mpack::msgpack::byte_range r;
-						unpacker >> r;
+						auto u=unpacker;
 
-						// call
-						std::vector<unsigned char> response_message;
-						auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
-						self->m_dispatcher->dispatch(response_packer, mpack::msgpack::unpacker(r.begin(), r.end()));
+						assert(u.is_array());
+						auto c=mpack::msgpack::array();
+						u >> c;
+						assert(c.size==4);
+						
+						int type;
+						u >> type;
+
+						switch(type)
+						{
+						case 0:
+							// request
+							{
+								int id;
+								u >> id;
+
+								mpack::msgpack::byte_range r;
+								unpacker >> r;
+
+								// call
+								std::vector<unsigned char> response_message;
+								auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
+								self->m_dispatcher->dispatch(response_packer, mpack::msgpack::unpacker(r.begin(), r.end()));
+
+								// send response
+								self->request(id, response_packer.pointer(), response_packer.size());
+							}
+							break;
+
+						case 1:
+							// response
+							{
+								int id;
+								u >> id;
+
+								mpack::msgpack::byte_range r;
+								unpacker >> r;
+
+								// fire response event
+							}
+							break;
+
+						case 2:
+							// notification
+							throw std::exception("2 not implemented");
+
+						default:
+							throw std::invalid_argument(__FUNCTION__);
+						}
                     }
                     catch(std::exception &ex)
                     {
                         std::cerr << ex.what() << std::endl;
                         break;
                     }
-
-                    // send response
-                    //begin_write(response_packer.pointer(), response_packer.size());
                 }
             }
 
             // next
-            self->begin_read();
+            //self->begin_read();
         };
 
         m_socket.async_read_some(boost::asio::buffer(m_read_buffer, 1024), handle_read);
@@ -93,6 +144,12 @@ public:
 
     void begin_write(const unsigned char *p, size_t len)
     {
+		if(!p){
+			return;
+		}
+
+        std::cout << m_name << ".begin_write" << std::endl;
+
         auto self=this;
         auto handle_write=[self](const boost::system::error_code& error, 
                 size_t bytes_transferred)
@@ -102,7 +159,7 @@ public:
                 return;
             }
 
-            std::cout << "writed: " << bytes_transferred << std::endl;
+            std::cout << self->m_name << ".writed: " << bytes_transferred << std::endl;
         };
 
 		m_socket.async_send(boost::asio::buffer(p, len), handle_write);
@@ -110,17 +167,27 @@ public:
 
     void request(const std::string &method, mpack::msgpack::packer &args_packer)
     {
-        auto pair=m_messageMap.insert(std::make_pair(++m_request_id, Message()));
+		int id=++m_request_id;
+
+		std::vector<unsigned char> buf;
+        auto request_packer=mpack::msgpack::create_external_vector_packer(buf);
+        mpack::msgpack::rpc::pack_request(request_packer, id, method, args_packer);
+
+		if(buf.empty()){
+			return;
+		}
+		request(id, &buf[0], buf.size());
+	}
+
+	void request(int id, const unsigned char *p, size_t len)
+	{
+        auto pair=m_messageMap.insert(std::make_pair(id, Message(p, len)));
         if(!pair.second){
             // duplicated id !
             throw std::exception(__FUNCTION__);
         }
 
         auto &message=pair.first->second;
-        auto request_packer=mpack::msgpack::create_external_vector_packer(message.request);
-        mpack::msgpack::rpc::pack_request(
-                request_packer, pair.first->first, method, args_packer);
-
         begin_write(&message.request[0], message.request.size());
     }
 };
@@ -147,7 +214,7 @@ int main(int argc, char **argv)
             boost::asio::ip::tcp::endpoint(
 			boost::asio::ip::tcp::v4(), port));
 
-    auto connection = std::make_shared<rpc_connection>(io_service, d);
+    auto connection = std::make_shared<rpc_connection>("server", io_service, d);
     auto on_accept=[connection](const boost::system::error_code& error)
     {
         if (error){
@@ -160,10 +227,11 @@ int main(int argc, char **argv)
     acceptor.async_accept(connection->socket(), on_accept);
 
     // client
-    rpc_connection client(io_service);
+    rpc_connection client("client", io_service);
     client.begin_connect("127.0.0.1", port);
 
     client.request("add", mpack::msgpack::create_vector_packer() << 1 << 2);
+
 
     /*
     //////////////////////////////////////////////////////////////////////

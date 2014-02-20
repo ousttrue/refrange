@@ -69,10 +69,38 @@ inline unpacker& operator>>(unpacker &unpacker, std::string &t) { return unpacke
 inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) { return unpacker.unpack(create_buffer(t)); }
 
 // collection
-inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return unpacker.unpack_collection(c); }
+inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return unpacker.unpack(c); }
 
 // only range copy
-inline unpacker& operator>>(unpacker &unpacker, byte_range &r){ return unpacker.unpack(create_buffer(r)); }
+inline unpacker& operator>>(unpacker &unpacker, byte_range &r)
+{ 
+    if(unpacker.is_array()){
+        auto begin=unpacker.range().current();
+        auto c=array();
+        unpacker >> c;
+        for(size_t i=0; i<c.size; ++i){
+            byte_range br;
+            unpacker >> br;
+        }
+        r=byte_range(begin, unpacker.range().current());
+    }
+    else if(unpacker.is_map()){
+        auto begin=unpacker.range().current();
+        auto c=array();
+        unpacker >> c;
+        for(size_t i=0; i<c.size; ++i){
+            byte_range br;
+            // key
+            unpacker >> br;
+            // value
+            unpacker >> br;
+        }
+        r=byte_range(begin, unpacker.range().current());
+    }
+    else {
+        return unpacker.unpack(create_buffer(r)); 
+    }
+}
 
 } // namespace
 } // namespace
