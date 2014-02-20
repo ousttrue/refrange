@@ -961,13 +961,6 @@ namespace msgpack {
         };
 
 
-    //
-    template<class Tag, class Value>
-        void read_and_assign(Tag &tag, reader_t &reader, Value *v, no_value_tag, arithmetic_copy_tag)
-        {
-            // do nothing
-        }
-
     template<class Tag, class Value>
         void read_and_assign(Tag &tag, reader_t &reader, Value *v, read_value_tag, arithmetic_copy_tag)
         {
@@ -1001,13 +994,6 @@ namespace msgpack {
         }
 
     template<class Tag, class Value>
-        void read_and_assign(Tag &tag, reader_t &reader, Value *v, sequence_value_tag, arithmetic_copy_tag)
-        {
-            throw std::invalid_argument(__FUNCTION__);
-        }
-
-    //
-    template<class Tag, class Value>
         void read_and_assign(Tag &tag, reader_t &reader, Value *v, no_value_tag, nocopy_tag)
         {
             // do nothing
@@ -1040,28 +1026,6 @@ namespace msgpack {
             assert(size==buf.size());
 
             // read only
-        }
-
-    //
-    template<class Tag, class Value>
-        void read_and_assign(Tag &tag, reader_t &reader, Value *v, no_value_tag, sequence_tag)
-        {
-            // no match type
-            throw std::invalid_argument(__FUNCTION__);
-        }
-
-    template<class Tag, class Value>
-        void read_and_assign(Tag &tag, reader_t &reader, Value *v, read_value_tag, sequence_tag)
-        {
-            // no match type
-            throw std::invalid_argument(__FUNCTION__);
-        }
-
-    template<class Tag, class Value>
-        void read_and_assign(Tag &tag, reader_t &reader, Value *v, header_value_tag, sequence_tag)
-        {
-            // no match type
-            throw std::invalid_argument(__FUNCTION__);
         }
 
     template<class Tag, class Value>
