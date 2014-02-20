@@ -1,4 +1,5 @@
 #include <mpack.h>
+#include <refrange/range.h>
 #include <gtest/gtest.h>
 
 /// nil:
@@ -7,13 +8,17 @@
 /// +--------+
 TEST(MsgpackTest, nil) 
 {
+    unsigned char buf[256]={0};
+
+    refrange::mutable_range r(buf, buf+256);
+
     // packing
-    auto p=mpack::msgpack::create_vector_packer();
+    auto p=mpack::msgpack::create_packer(r);
     p.pack_nil();
 
     // check
     ASSERT_EQ(1, p.size());
-    EXPECT_EQ(0xc0, *p.pointer());
+    EXPECT_EQ(0xc0, buf[0]);
 }
 
 /// false:

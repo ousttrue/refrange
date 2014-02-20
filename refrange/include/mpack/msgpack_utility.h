@@ -44,6 +44,27 @@ inline packer create_vector_packer()
     return packer(writer, pointer, size);
 }
 
+inline packer create_packer(const mutable_range &r)
+{
+    auto w=std::make_shared<range_writer>(r);
+
+    auto writer=[w](const unsigned char *p, size_t size)->size_t
+    {
+        return w->write(p, size);
+    };
+
+    auto pointer=[w]()->const unsigned char *{
+        return w->get_range().begin;
+    };
+
+    auto size=[w]()->size_t{
+        return w->size();
+    };
+
+    return packer(writer, pointer, size);
+}
+
+
 template<class Container>
 inline unpacker create_unpacker(Container &c)
 {

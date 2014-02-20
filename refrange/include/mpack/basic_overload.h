@@ -74,30 +74,30 @@ inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) {
 inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return unpacker.unpack(c); }
 
 // only range copy
-inline unpacker& operator>>(unpacker &unpacker, range &r)
+inline unpacker& operator>>(unpacker &unpacker, immutable_range &r)
 { 
     if(unpacker.is_array()){
         auto begin=unpacker.range().current();
         auto c=array();
         unpacker >> c;
         for(size_t i=0; i<c.size; ++i){
-            range br;
+			immutable_range br;
             unpacker >> br;
         }
-        r=range(begin, unpacker.range().current());
+		r = immutable_range(begin, unpacker.range().current());
     }
     else if(unpacker.is_map()){
         auto begin=unpacker.range().current();
         auto c=array();
         unpacker >> c;
         for(size_t i=0; i<c.size; ++i){
-            range br;
+			immutable_range br;
             // key
             unpacker >> br;
             // value
             unpacker >> br;
         }
-        r=range(begin, unpacker.range().current());
+		r = immutable_range(begin, unpacker.range().current());
     }
     else {
         return unpacker.unpack(create_buffer(r)); 

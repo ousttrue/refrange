@@ -2,17 +2,17 @@
 
 namespace refrange {
 
-struct range
+struct immutable_range
 {
     const unsigned char *begin;
     const unsigned char *end;
 
 public:
-	range()
+	immutable_range()
         : begin(0), end(0)
     {} 
 
-	range(const unsigned char *b, const unsigned char *e)
+	immutable_range(const unsigned char *b, const unsigned char *e)
         : begin(b), end(e)
     {}
 };
@@ -20,13 +20,15 @@ public:
 
 class range_reader
 {
-    range m_range;
+    immutable_range m_range;
     const unsigned char *m_current;
 
 public:
-    range_reader(const range &range)
+    range_reader(const immutable_range &range)
         : m_range(range), m_current(m_range.begin)
     {}
+
+    immutable_range &get_range(){ return m_range; }
 
     const unsigned char *current()const
     { 
@@ -88,6 +90,56 @@ public:
         return len;
     }
 };
+
+
+struct mutable_range
+{
+    unsigned char *begin;
+    unsigned char *end;
+
+public:
+	mutable_range()
+        : begin(0), end(0)
+    {} 
+
+	mutable_range(unsigned char *b, unsigned char *e)
+        : begin(b), end(e)
+    {}
+};
+
+
+class range_writer
+{
+    mutable_range m_range;
+    unsigned char *m_current;
+
+public:
+    range_writer(const mutable_range &range)
+        : m_range(range), m_current(m_range.begin)
+    {}
+
+    mutable_range &get_range(){ return m_range; }
+
+    size_t size()const{ return m_current-m_range.begin; }
+
+    size_t write(const unsigned char *p, size_t len)
+    {
+        if(!p){
+            return 0;
+        }
+        if(len==0){
+            return 0;
+        }
+        if(m_current+len>m_range.end){
+            throw std::range_error(__FUNCTION__);
+        }
+
+        std::copy(p, p+len, m_current);
+        m_current+=len;
+        return len;
+    }
+};
+
 
 } // namespace
 

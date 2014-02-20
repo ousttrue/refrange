@@ -1439,7 +1439,7 @@ class unpacker
 public:
 
     unpacker(const unsigned char *begin, const unsigned char *end)
-        : m_range(refrange::range(begin, end))
+        : m_range(refrange::immutable_range(begin, end))
     {
     }
 
