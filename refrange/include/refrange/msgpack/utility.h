@@ -1,7 +1,9 @@
 #pragma once
 
-namespace mpack {
+namespace refrange {
 namespace msgpack {
+
+using namespace mpack::msgpack;
 
 //////////////////////////////////////////////////////////////////////////////
 // utility

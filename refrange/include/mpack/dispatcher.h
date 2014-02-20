@@ -3,6 +3,9 @@
 
 namespace mpack {
 namespace msgpack {
+
+	using namespace refrange::msgpack;
+
 namespace rpc {
 
 class dispatcher

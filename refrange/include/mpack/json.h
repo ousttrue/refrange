@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 #include <sstream>
-
+#include <refrange/msgpack/utility.h>
 
 namespace mpack {
 namespace json {
@@ -114,7 +114,7 @@ namespace json {
         bool parse_object(::mpack::msgpack::packer &packer)
         {
             // nest packer
-			auto nested = ::mpack::msgpack::create_vector_packer();
+			auto nested = ::refrange::msgpack::create_vector_packer();
 
             // drop open brace
 			assert(m_peek_char == '{');
