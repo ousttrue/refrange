@@ -758,7 +758,13 @@ public:
 
     const unsigned char *begin()const{ return m_begin; }
     const unsigned char *end()const{ return m_end; }
-    const unsigned char *current()const{ return m_current; }
+    const unsigned char *current()const
+    { 
+        if(is_end()){
+            throw std::range_error(__FUNCTION__);
+        }
+        return m_current; 
+    }
 
     bool is_end()const{ return m_current>=m_end; }
 
