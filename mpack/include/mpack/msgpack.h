@@ -1077,6 +1077,53 @@ private:
         }
 };
 
+// avoid warning
+struct bool_buffer: public base_buffer
+{
+    bool &m_v;
+
+    bool_buffer(bool &v)
+        : m_v(v)
+    {
+    }
+
+    template<class Tag
+        >
+        void read_from(Tag &tag, reader_t &reader
+                , typename std::enable_if<std::is_arithmetic<bool>::value>::type* =0)
+        {
+            _read_from(tag, reader, Tag::read_category(), Tag::value_category());
+        }
+
+private:
+    template<class Tag>
+        void _read_from(Tag &tag, reader_t &reader, no_read_tag, no_value_tag)
+        {
+            // error ?
+        }
+
+    template<class Tag>
+        void _read_from(Tag &tag, reader_t &reader, no_read_tag, single_value_tag)
+        {
+            // header value
+            m_v=tag.value()!=0;
+        }
+
+    template<class Tag>
+        void _read_from(Tag &tag, reader_t &reader, read_value_tag, single_value_tag)
+        {
+            Tag::read_type t;            
+            auto size=reader((unsigned char*)&t, sizeof(Tag::read_type));
+            m_v=t!=0;
+        }
+
+    template<class Tag>
+        void _read_from(Tag &tag, reader_t &reader, read_value_tag, sequence_value_tag)
+        {
+            // error ?
+        }
+};
+
 
 template<typename Value>
 struct sequence_buffer: public base_buffer
@@ -1141,6 +1188,11 @@ inline arithmetic_buffer<Value> create_buffer(Value &t
         )
 {
     return arithmetic_buffer<Value>(t);
+}
+
+inline bool_buffer create_buffer(bool &t)
+{
+    return bool_buffer(t);
 }
 
 inline sequence_buffer<std::string> create_buffer(std::string &t)
