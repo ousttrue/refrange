@@ -12,36 +12,30 @@
 namespace mpack {
 namespace msgpack {
 
-    struct unpack_error: public std::invalid_argument
-    {
-        unpack_error(const std::string &message)
-            : std::invalid_argument(message)
-        {}
-    };
+//////////////////////////////////////////////////////////////////////////////
+// exception
+//////////////////////////////////////////////////////////////////////////////
+struct unpack_error: public std::invalid_argument
+{
+    unpack_error(const std::string &message)
+        : std::invalid_argument(message)
+    {}
+};
 
-    struct incompatible_unpack_type: public unpack_error
-    {
-        incompatible_unpack_type(const std::string &message)
-            : unpack_error(message)
-        {}
-    };
+struct incompatible_unpack_type: public unpack_error
+{
+    incompatible_unpack_type(const std::string &message)
+        : unpack_error(message)
+    {}
+};
 
-    struct invalid_head_byte: public unpack_error
-    {
-        invalid_head_byte(const std::string &message)
-            : unpack_error(message)
-        {}
-    };
+struct invalid_head_byte: public unpack_error
+{
+    invalid_head_byte(const std::string &message)
+        : unpack_error(message)
+    {}
+};
 
-    struct no_collection_tag{};
-    struct array_tag{};
-    struct map_tag{};
-
-    template<class T>
-        char extract_head_byte(unsigned char byte)
-        {
-            return static_cast<char>(byte & ~T::mask);
-        }
 
     struct no_value_tag{};
     struct header_value_tag{};
@@ -104,6 +98,11 @@ namespace msgpack {
         typedef char header_value_type;
         header_value_type value(){ return static_cast<header_value_type>(head_byte); };
 
+        static unsigned char extract_head_byte(unsigned char head_byte)
+        {
+            return static_cast<unsigned char>(head_byte & ~mask);
+        }
+
         static bool is_match(unsigned char head_byte)
         {
             return bits == (mask & head_byte);
@@ -126,7 +125,12 @@ namespace msgpack {
         {}
 
         typedef char header_value_type;
-        header_value_type value(){ return -static_cast<header_value_type>(extract_head_byte<negative_fixint_tag>(head_byte)); };
+        header_value_type value(){ return -static_cast<header_value_type>(extract_head_byte(head_byte)); };
+
+        static unsigned char extract_head_byte(unsigned char head_byte)
+        {
+            return static_cast<unsigned char>(head_byte & ~mask);
+        }
 
         static bool is_match(unsigned char head_byte)
         {
@@ -259,6 +263,11 @@ namespace msgpack {
             : len(l)
         {}
 
+        static unsigned char extract_head_byte(unsigned char head_byte)
+        {
+            return static_cast<unsigned char>(head_byte & ~mask);
+        }
+
         static bool is_match(unsigned char head_byte)
         {
             return bits == (mask & head_byte);
@@ -371,6 +380,11 @@ namespace msgpack {
             : len(l)
         {}
 
+        static unsigned char extract_head_byte(unsigned char head_byte)
+        {
+            return static_cast<unsigned char>(head_byte & ~mask);
+        }
+
         static bool is_match(unsigned char head_byte)
         {
             return bits == (mask & head_byte);
@@ -424,6 +438,11 @@ namespace msgpack {
         fixmap_tag(unsigned char l)
             : len(l)
         {}
+
+        static unsigned char extract_head_byte(unsigned char head_byte)
+        {
+            return static_cast<unsigned char>(head_byte & ~mask);
+        }
 
         static bool is_match(unsigned char head_byte)
         {
@@ -543,25 +562,6 @@ namespace msgpack {
     //////////////////////////////////////////////////////////////////////////////
     // packer
     //////////////////////////////////////////////////////////////////////////////
-    template<class Tag, class Enable=void>
-        struct collection_traits
-        {
-            typedef no_collection_tag tag;
-        };
-
-    template<class Tag>
-        struct collection_traits<Tag, typename std::enable_if<Tag::is_map>::type>
-        {
-            typedef map_tag tag;
-        };
-
-    template<class Tag>
-        struct collection_traits<Tag, typename std::enable_if<Tag::is_array>::type>
-        {
-            typedef array_tag tag;
-        };
-
-
     typedef std::function<size_t(unsigned char*, size_t)> reader_t;
     struct collection_context
     {
@@ -1276,13 +1276,13 @@ namespace msgpack {
                 default:
                     if(fixarray_tag::is_match(head_byte)){
                         // collection
-                        unsigned char len=extract_head_byte<fixarray_tag>(head_byte);
+                        unsigned char len=fixarray_tag::extract_head_byte(head_byte);
                         c.type=collection_context::collection_array;
                         c.size=len;
                     }
                     else if(fixmap_tag::is_match(head_byte)){
                         // collection
-                        unsigned char len=extract_head_byte<fixmap_tag>(head_byte);
+                        unsigned char len=fixmap_tag::extract_head_byte(head_byte);
                         c.type=collection_context::collection_map;
                         c.size=len;
                     }
@@ -1433,7 +1433,7 @@ namespace msgpack {
                         }
                         else if(fixstr_tag::is_match(head_byte)){
                             // str todo
-                            auto len=extract_head_byte<fixstr_tag>(head_byte);
+                            auto len=fixstr_tag::extract_head_byte(head_byte);
                             b.read_from(fixstr_tag(len), m_reader);
                         }
                         else {
