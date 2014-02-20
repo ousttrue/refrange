@@ -81,6 +81,7 @@ inline typecategory_t typecategory(unsigned char b)
     return typecategory_unknown;
 }
 
+/*
 inline void drop(unpacker &u)
 {
 	auto category=typecategory(u.peek_byte());
@@ -126,6 +127,7 @@ inline void drop(unpacker &u)
             break;
     }
 }
+*/
 
 inline void typestruct(unpacker &u, std::ostream &os)
 {
@@ -156,33 +158,26 @@ inline void typestruct(unpacker &u, std::ostream &os)
         os << "}";
     }
     else{
-        switch(typecategory(u.peek_byte()))
-        {
-            case typecategory_bool:
-                os << "bool";
-                break;
-
-            case typecategory_int:
-                os << "int";
-                break;
-
-            case typecategory_float:
-                os << "float";
-                break;
-
-            case typecategory_byte_array:
-                os << "byte[]";
-                break;
-
-			case typecategory_string:
-				os << "string";
-				break;
-
-			default:
-                os << "unknown";
-                break;
+        if(u.is_bool()){
+            os << "bool";
         }
-        drop(u);
+        else if(u.is_integer()){
+            os << "int";
+        }
+        else if(u.is_float()){
+            os << "float";
+        }
+        else if(u.is_bin()){
+            os << "byte[]";
+        }
+        else if(u.is_str()){
+            os << "string";
+        }
+        else{
+            os << "unknown";
+        }
+
+        u.drop();
     }
 }
 

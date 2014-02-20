@@ -35,7 +35,7 @@ TEST(RPC, fp_2to1)
     //////////////////////////////////////////////////////////////////////
 
     // unpack result
-    auto response_unpacker=mpack::msgpack::create_memory_unpacker(
+    auto response_unpacker=mpack::msgpack::create_unpacker(
             response_packer.pointer(), response_packer.size());
 
     // [type(int)=1, msgid(int), error(nil or not), result(any)]

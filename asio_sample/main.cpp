@@ -61,7 +61,7 @@ public:
 
             std::copy(self->m_read_buffer, self->m_read_buffer+bytes_transferred, std::back_inserter(self->m_unpack_buffer));
             if(!self->m_unpack_buffer.empty()){
-                auto unpacker=mpack::msgpack::create_memory_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
+                auto unpacker=mpack::msgpack::create_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
                 while(true)
                 {
                     try {
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     //////////////////////////////////////////////////////////////////////
 
     // unpack result
-    auto response_unpacker=mpack::msgpack::create_memory_unpacker(
+    auto response_unpacker=mpack::msgpack::create_unpacker(
             response_packer.pointer(), response_packer.size());
 
     // [type(int)=1, msgid(int), error(nil or not), result(any)]

@@ -9,7 +9,7 @@ TEST(TypeStructTest, sample)
     p << 1;
 
     // unpack
-	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
+	auto u = mpack::msgpack::create_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -24,7 +24,7 @@ TEST(TypeStructTest, array)
     p << mpack::msgpack::array(2) << 1 << 2;
 
     // unpack
-	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
+	auto u = mpack::msgpack::create_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -39,7 +39,7 @@ TEST(TypeStructTest, vec3)
     p << mpack::msgpack::array(3) << 1.0f << 1.0f << 1.0f;
 
     // unpack
-	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
+	auto u = mpack::msgpack::create_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -54,7 +54,7 @@ TEST(TypeStructTest, map)
     p << mpack::msgpack::map(1) << "key" << 1;
 
     // unpack
-	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
+	auto u = mpack::msgpack::create_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);
@@ -72,7 +72,7 @@ TEST(TypeStructTest, nest)
         << 1;
 
     // unpack
-	auto u = mpack::msgpack::create_memory_unpacker(p.pointer(), p.size());
+	auto u = mpack::msgpack::create_unpacker(p.pointer(), p.size());
 
     std::stringstream ss;
     mpack::msgpack::typestruct(u, ss);

@@ -44,6 +44,21 @@ inline packer create_vector_packer()
     return packer(writer, pointer, size);
 }
 
+template<class Container>
+inline unpacker create_unpacker(Container &c)
+{
+    if(c.empty()){
+        return unpacker(0, 0);
+    }
+    return unpacker(create_unpacker(&c[0], c.size()));
+}
+
+inline unpacker create_unpacker(const unsigned char *begin, size_t len)
+{
+    return unpacker(begin, begin+len);
+}
+
+/*
 struct memory_unpacker
 {
     const unsigned char *m_begin;
@@ -67,7 +82,7 @@ struct memory_unpacker
     }
 };
 
-inline unpacker create_memory_unpacker(const unsigned char *begin, size_t len)
+inline unpacker create_unpacker(const unsigned char *begin, size_t len)
 {
     auto context=std::make_shared<memory_unpacker>(begin, len);
     auto reader=[context](unsigned char *p, size_t size)->size_t
@@ -76,15 +91,18 @@ inline unpacker create_memory_unpacker(const unsigned char *begin, size_t len)
     };
     return unpacker(reader);
 };
+*/
 
 inline unpacker create_unpacker_from_packer(packer &packer)
 {
+    /*
     auto context=std::make_shared<memory_unpacker>(packer.pointer(), packer.size());
     auto reader=[context](unsigned char *p, size_t size)->size_t
     {
         return context->read(p, size);
     };
-    return unpacker(reader);
+    */
+    return create_unpacker(packer.pointer(), packer.size());
 }
 
 } // namespace

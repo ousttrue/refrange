@@ -583,7 +583,6 @@ struct ext32_tag
 //////////////////////////////////////////////////////////////////////////////
 // packer
 //////////////////////////////////////////////////////////////////////////////
-typedef std::function<size_t(unsigned char*, size_t)> reader_t;
 struct collection_context
 {
     enum collection_t
@@ -945,10 +944,91 @@ inline collection_context map(const packer &packer)
 //////////////////////////////////////////////////////////////////////////////
 // unpacker
 //////////////////////////////////////////////////////////////////////////////
+class byte_range
+{
+    const unsigned char *m_begin;
+    const unsigned char *m_end;
+    const unsigned char *m_current;
+
+    // 0-255 (-1 is invalid)
+    int m_peek_byte;
+
+public:
+    byte_range(const unsigned char *begin, const unsigned char *end)
+        : m_begin(begin), m_end(end), m_current(m_begin), m_peek_byte(-1)
+    {}
+
+    unsigned char peek_byte()
+    {
+        if(m_peek_byte==-1){
+            unsigned char byte;
+            auto size=read(&byte, 1);
+            assert(size==1);
+            m_peek_byte=byte;
+        }
+        return m_peek_byte;
+    }
+
+    unsigned char read_byte()
+    {
+        unsigned char c;
+        read_value<unsigned char>(&c);
+        return c;
+    }
+
+    template<typename T, typename W>
+        void read_value(W *w)
+        {
+            T n;
+            size_t size=read((unsigned char*)&n, sizeof(T));
+            *w=n;
+        }
+
+    size_t remain_size()
+    {
+        if(m_current==0){
+            return 0;
+        }
+
+        if(m_end==0){
+            return -1;
+        }
+
+        return m_end-m_current;
+    }
+
+    size_t read(unsigned char *p, size_t len)
+    {
+        if(p==0){
+            return 0;
+        }
+        if(len==0){
+            return 0;
+        }
+
+        size_t peek_size=0;
+        if(m_peek_byte!=-1){
+            // first peek byte
+            *p=static_cast<unsigned char>(m_peek_byte);
+            m_peek_byte=-1;
+
+            --len;
+            ++p;
+            ++peek_size;
+        }
+
+        size_t copysize=std::min(len, remain_size());
+        std::copy(m_current, m_current+copysize, p);
+        m_current+=copysize;
+        return peek_size+copysize;
+    }
+};
+
+
 struct base_buffer
 {
     template<class Tag>
-        void read_from(Tag &tag, reader_t &reader)
+        void read_from(Tag &tag, byte_range &reader)
         {
             // read only
             _read_from(tag, reader, Tag::read_category(), Tag::value_category());
@@ -965,36 +1045,36 @@ private:
     // * sequence_value_tag
     //
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, single_value_tag)
         {
             // do nothing
         }
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, sequence_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, sequence_value_tag)
         {
             // do nothing
         }
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, no_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, no_value_tag)
         {
             // do nothing
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, single_value_tag)
         {
             // drop value
             Tag::read_type t;            
-            auto size=reader((unsigned char*)&t, sizeof(Tag::read_type));
+            auto size=reader.read((unsigned char*)&t, sizeof(Tag::read_type));
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, sequence_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, sequence_value_tag)
         {
             // drop value
             for(size_t i=0; i<tag.len; ++i){
                 unsigned char c;
-                auto size=reader(&c, sizeof(c));
+                auto size=reader.read(&c, sizeof(c));
             }
         }
 };
@@ -1013,7 +1093,7 @@ struct arithmetic_buffer: public base_buffer
 
     template<class Tag
         >
-        void read_from(Tag &tag, reader_t &reader
+        void read_from(Tag &tag, byte_range &reader
                 , typename std::enable_if<std::is_arithmetic<Value>::value>::type* =0)
         {
             _read_from(tag, reader, Tag::read_category(), Tag::value_category());
@@ -1021,28 +1101,28 @@ struct arithmetic_buffer: public base_buffer
 
 private:
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, no_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, no_value_tag)
         {
             // error ?
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, single_value_tag)
         {
             // header value
             m_v=static_cast<Value>(tag.value());
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, single_value_tag)
         {
             Tag::read_type t;            
-            auto size=reader((unsigned char*)&t, sizeof(Tag::read_type));
+            auto size=reader.read((unsigned char*)&t, sizeof(Tag::read_type));
             m_v=static_cast<Value>(t);
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, sequence_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, sequence_value_tag)
         {
             // error ?
         }
@@ -1060,7 +1140,7 @@ struct bool_buffer: public base_buffer
 
     template<class Tag
         >
-        void read_from(Tag &tag, reader_t &reader
+        void read_from(Tag &tag, byte_range &reader
                 , typename std::enable_if<std::is_arithmetic<bool>::value>::type* =0)
         {
             _read_from(tag, reader, Tag::read_category(), Tag::value_category());
@@ -1068,28 +1148,28 @@ struct bool_buffer: public base_buffer
 
 private:
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, no_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, no_value_tag)
         {
             // error ?
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, single_value_tag)
         {
             // header value
             m_v=tag.value()!=0;
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, single_value_tag)
         {
             Tag::read_type t;            
-            auto size=reader((unsigned char*)&t, sizeof(Tag::read_type));
+			auto size=reader.read((unsigned char*)&t, sizeof(Tag::read_type));
             m_v=t!=0;
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, sequence_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, sequence_value_tag)
         {
             // error ?
         }
@@ -1107,37 +1187,37 @@ struct sequence_buffer: public base_buffer
     }
 
     template<class Tag>
-        void read_from(Tag &tag, reader_t &reader)
+        void read_from(Tag &tag, byte_range &reader)
         {
             _read_from(tag, reader, Tag::read_category(), Tag::value_category());
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, no_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, no_value_tag)
         {
             // error ?
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, no_read_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, no_read_tag, single_value_tag)
         {
             // error ?
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, single_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, single_value_tag)
         {
             // error ?
         }
 
     template<class Tag>
-        void _read_from(Tag &tag, reader_t &reader, read_value_tag, sequence_value_tag)
+        void _read_from(Tag &tag, byte_range &reader, read_value_tag, sequence_value_tag)
         {
             if(tag.len==0){
                 return;
             }
             m_v.resize(tag.len);
-            auto size=reader((unsigned char*)&m_v[0], m_v.size());
+            auto size=reader.read((unsigned char*)&m_v[0], m_v.size());
             assert(size==m_v.size());
         }
 };
@@ -1184,42 +1264,23 @@ inline base_buffer dummy_buffer()
 
 class unpacker
 {
-    reader_t m_reader;
-    // 0-255 (-1 is invalid)
-    int m_peek_byte;
+    byte_range m_range;
 public:
 
-    unpacker(const reader_t &reader)
-        : m_reader(reader), m_peek_byte(-1)
-    {}
-
-    unsigned char peek_byte()
+    unpacker(const unsigned char *begin, const unsigned char *end)
+        : m_range(begin, end)
     {
-        if(m_peek_byte==-1){
-            unsigned char byte;
-            auto size=read(&byte, 1);
-            assert(size==1);
-            m_peek_byte=byte;
-        }
-        return m_peek_byte;
-    }
-
-    unsigned char read_byte()
-    {
-        unsigned char c;
-        read_value<unsigned char>(&c);
-        return c;
     }
 
     unpacker& unpack_collection(collection_context &c)
     {
-        auto head_byte=read_byte();
+        auto head_byte=m_range.read_byte();
         switch(head_byte)
         {
             case array16_tag::bits:
                 {
                     unsigned short len;
-                    read_value<unsigned short>(&len);
+                    m_range.read_value<unsigned short>(&len);
                     c.type=collection_context::collection_array;
                     c.size=len;
                 }
@@ -1228,7 +1289,7 @@ public:
             case array32_tag::bits:
                 {
                     unsigned int len;
-                    read_value<unsigned int>(&len);
+                    m_range.read_value<unsigned int>(&len);
                     c.type=collection_context::collection_array;
                     c.size=len;
                 }
@@ -1237,7 +1298,7 @@ public:
             case map16_tag::bits:
                 {
                     unsigned short len;
-                    read_value<unsigned short>(&len);
+                    m_range.read_value<unsigned short>(&len);
                     c.type=collection_context::collection_map;
                     c.size=len;
                 }
@@ -1246,7 +1307,7 @@ public:
             case map32_tag::bits:
                 {
                     unsigned int len;
-                    read_value<unsigned int>(&len);
+                    m_range.read_value<unsigned int>(&len);
                     c.type=collection_context::collection_map;
                     c.size=len;
                 }
@@ -1274,110 +1335,115 @@ public:
         return *this;
     }
 
+    unpacker& drop()
+    {
+        return unpack(base_buffer());
+    }
+
     template<class BUFFER>
         unpacker& unpack(BUFFER &b)
         {
-            auto head_byte=read_byte();
+            auto head_byte=m_range.read_byte();
             switch(head_byte)
             {
                 case nil_tag::bits:
-                    b.read_from(nil_tag(), m_reader);
+                    b.read_from(nil_tag(), m_range);
                     break;
 
                 case false_tag::bits:
-                    b.read_from(false_tag(), m_reader);
+                    b.read_from(false_tag(), m_range);
                     break;
 
                 case true_tag::bits:
-                    b.read_from(true_tag(), m_reader);
+                    b.read_from(true_tag(), m_range);
                     break;
 
                 case float32_tag::bits:
-                    b.read_from(float32_tag(), m_reader);
+                    b.read_from(float32_tag(), m_range);
                     break;
 
                 case float64_tag::bits:
-                    b.read_from(float64_tag(), m_reader);
+                    b.read_from(float64_tag(), m_range);
                     break;
 
                 case uint8_tag::bits:
-                    b.read_from(uint8_tag(), m_reader);
+                    b.read_from(uint8_tag(), m_range);
                     break;
 
                 case uint16_tag::bits:
-                    b.read_from(uint16_tag(), m_reader);
+                    b.read_from(uint16_tag(), m_range);
                     break;
 
                 case uint32_tag::bits:
-                    b.read_from(uint32_tag(), m_reader);
+                    b.read_from(uint32_tag(), m_range);
                     break;
 
                 case uint64_tag::bits:
-                    b.read_from(uint64_tag(), m_reader);
+                    b.read_from(uint64_tag(), m_range);
                     break;
 
                 case int8_tag::bits:
-                    b.read_from(int8_tag(), m_reader);
+                    b.read_from(int8_tag(), m_range);
                     break;
 
                 case int16_tag::bits:
-                    b.read_from(int16_tag(), m_reader);
+                    b.read_from(int16_tag(), m_range);
                     break;
 
                 case int32_tag::bits:
-                    b.read_from(int32_tag(), m_reader);
+                    b.read_from(int32_tag(), m_range);
                     break;
 
                 case int64_tag::bits:
-                    b.read_from(int64_tag(), m_reader);
+                    b.read_from(int64_tag(), m_range);
                     break;
 
                     // sequence
                 case bin8_tag::bits:
                     {
                         unsigned char len;
-                        read_value<unsigned char>(&len);
-                        b.read_from(bin8_tag(len), m_reader);
+                        m_range.read_value<unsigned char>(&len);
+                        b.read_from(bin8_tag(len), m_range);
                     }
                     break;
 
                 case bin16_tag::bits:
                     {
                         unsigned short len;
-                        read_value<unsigned short>(&len);
-                        b.read_from(bin16_tag(len), m_reader);
+                        m_range.read_value<unsigned short>(&len);
+                        b.read_from(bin16_tag(len), m_range);
                     }
                     break;
 
                 case bin32_tag::bits:
                     {
                         unsigned int len;
-                        read_value<unsigned int>(&len);
-                        b.read_from(bin32_tag(len), m_reader);
+                        m_range.read_value<unsigned int>(&len);
+                        b.read_from(bin32_tag(len), m_range);
                     }
                     break;
 
                 case str8_tag::bits:
                     {
                         unsigned char len;
-                        read_value<unsigned char>(&len);
-                        b.read_from(str8_tag(len), m_reader);
+                        m_range.read_value<unsigned char>(&len);
+                        b.read_from(str8_tag(len), m_range);
                     }
                     break;
 
                 case str16_tag::bits:
                     {
                         unsigned short len;
-                        read_value<unsigned short>(&len);
-                        b.read_from(str16_tag(len), m_reader);
+                        m_range.read_value<unsigned short>(&len);
+                        b.read_from(str16_tag(len), m_range);
                     }
                     break;
 
                 case str32_tag::bits:
                     {
                         unsigned int len;
-                        read_value<unsigned int>(&len);
-                        b.read_from(str32_tag(len), m_reader);
+                        m_range.read_value<unsigned int>(&len);
+                        b.read_from(str32_tag(len), m_range);
                     }
                     break;
 
@@ -1404,16 +1470,16 @@ public:
                 default:
                     if(positive_fixint_tag::is_match(head_byte)){
                         // char
-                        b.read_from(positive_fixint_tag(head_byte), m_reader);
+                        b.read_from(positive_fixint_tag(head_byte), m_range);
                     }
                     else if(negative_fixint_tag::is_match(head_byte)){
                         // uchar
-                        b.read_from(negative_fixint_tag(head_byte), m_reader);
+                        b.read_from(negative_fixint_tag(head_byte), m_range);
                     }
                     else if(fixstr_tag::is_match(head_byte)){
                         // str todo
                         auto len=fixstr_tag::extract_head_byte(head_byte);
-                        b.read_from(fixstr_tag(len), m_reader);
+                        b.read_from(fixstr_tag(len), m_range);
                     }
                     else {
                         throw std::invalid_argument(__FUNCTION__);
@@ -1427,13 +1493,20 @@ public:
 
     bool is_nil()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         return head_byte==nil_tag::bits; 
+    }
+
+    bool is_bool()
+    {
+        auto head_byte=m_range.peek_byte();
+        return head_byte==false_tag::bits
+            || head_byte==true_tag::bits;
     }
 
     bool is_sigend()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case int8_tag::bits:
@@ -1447,7 +1520,7 @@ public:
 
     bool is_unsigned()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case uint8_tag::bits:
@@ -1461,7 +1534,7 @@ public:
 
     bool is_float()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case float32_tag::bits:
@@ -1478,7 +1551,7 @@ public:
 
     bool is_bin()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case bin8_tag::bits:
@@ -1491,7 +1564,7 @@ public:
 
     bool is_str()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case str8_tag::bits:
@@ -1509,7 +1582,7 @@ public:
 
     bool is_array()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case array16_tag::bits:
@@ -1521,7 +1594,7 @@ public:
 
     bool is_map()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case map16_tag::bits:
@@ -1533,7 +1606,7 @@ public:
 
     bool is_integer()
     {
-        auto head_byte=peek_byte();
+        auto head_byte=m_range.peek_byte();
         switch(head_byte)
         {
             case int8_tag::bits:
@@ -1550,34 +1623,6 @@ public:
             || negative_fixint_tag::is_match(head_byte);
     }
 
-private:
-    template<typename T, typename W>
-        void read_value(W *w)
-        {
-    T n;
-    size_t size=read((unsigned char*)&n, sizeof(T));
-    *w=n;
-        }
-
-    size_t read(unsigned char *p, size_t len)
-    {
-        if(m_peek_byte==-1){
-            size_t size=m_reader(p, len);
-            assert(size==len);
-            return size;
-        }
-        else{
-            {
-                // first peek byte
-                *p=static_cast<unsigned char>(m_peek_byte);
-                m_peek_byte=-1;
-            }
-            size_t size=m_reader(p+1, len-1);
-            ++size;
-            assert(size==len);
-            return size;
-        }
-    }
 };
 
 

@@ -20,7 +20,7 @@ TEST(JsonTest, parse)
 
     // msgpack to json
     {
-        auto u = mpack::msgpack::create_memory_unpacker(&buffer[0], buffer.size());
+        auto u=mpack::msgpack::create_unpacker(buffer);
 
         std::string out;
         mpack::json::writer_t writer=[&out](const unsigned char *p, size_t len)->size_t{
