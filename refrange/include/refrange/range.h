@@ -8,22 +8,19 @@ struct range
     const unsigned char *end;
 
 public:
-    byte_range()
+	range()
         : begin(0), end(0)
     {} 
 
-    byte_range(const unsigned char *begin, const unsigned char *end)
-        : m_begin(begin), m_end(end)
+	range(const unsigned char *b, const unsigned char *e)
+        : begin(b), end(e)
     {}
-
-    const unsigned char *begin()const{ return m_begin; }
-    const unsigned char *end()const{ return m_end; }
 };
 
 
 class range_reader
 {
-    range &m_range;
+    range m_range;
     const unsigned char *m_current;
 
 public:
@@ -71,7 +68,7 @@ public:
         if(m_current==0){
             return 0;
         }
-        return m_reange.end-m_current;
+        return m_range.end-m_current;
     }
 
     size_t read(unsigned char *p, size_t len)
@@ -88,7 +85,7 @@ public:
 
         std::copy(m_current, m_current+len, p);
         m_current+=len;
-        return copysize;
+        return len;
     }
 };
 
