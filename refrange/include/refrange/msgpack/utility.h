@@ -1,9 +1,9 @@
 #pragma once
+#include "../msgpack.h"
 
 namespace refrange {
 namespace msgpack {
 
-using namespace mpack::msgpack;
 
 //////////////////////////////////////////////////////////////////////////////
 // utility

@@ -7,14 +7,11 @@
 #include <memory>
 #include <type_traits>
 #include <assert.h>
-#include <refrange/range.h>
+#include "range.h"
 
-namespace mpack {
+namespace refrange {
 namespace msgpack {
 
-using namespace refrange;
-
-extern void * enabler ;
 
 //////////////////////////////////////////////////////////////////////////////
 // exception

@@ -1,6 +1,7 @@
-#include <mpack.h>
-#include <refrange/range.h>
+#include <refrange/msgpack/basic_overload.h>
+#include <refrange/msgpack/utility.h>
 #include <gtest/gtest.h>
+
 
 /// nil:
 /// +--------+
@@ -63,7 +64,7 @@ TEST(MsgpackTest, small_int)
 
     // check
     ASSERT_EQ(1, p.size());
-	ASSERT_TRUE(mpack::msgpack::positive_fixint_tag::is_match(*p.pointer()));
+	ASSERT_TRUE(refrange::msgpack::positive_fixint_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = refrange::msgpack::create_unpacker(p.pointer(), p.size());
@@ -84,7 +85,7 @@ TEST(MsgpackTest, small_negative_int)
 
     // check
     ASSERT_EQ(1, p.size());
-	ASSERT_TRUE(mpack::msgpack::negative_fixint_tag::is_match(*p.pointer()));
+	ASSERT_TRUE(refrange::msgpack::negative_fixint_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = refrange::msgpack::create_unpacker(p.pointer(), p.size());
@@ -353,7 +354,7 @@ TEST(MsgpackTest, fixstr)
 
     // check
     ASSERT_EQ(1+3, p.size());
-	ASSERT_TRUE(mpack::msgpack::fixstr_tag::is_match(*p.pointer()));
+	ASSERT_TRUE(refrange::msgpack::fixstr_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = refrange::msgpack::create_unpacker(p.pointer(), p.size());
@@ -537,19 +538,19 @@ TEST(MsgpackTest, fixarray)
 {
     // packing
 	auto p=refrange::msgpack::create_vector_packer();
-	p << mpack::msgpack::array(3)
+	p << refrange::msgpack::array(3)
         << 1 << "str" << true
 		;
 
 
     // check
-	ASSERT_TRUE(mpack::msgpack::fixarray_tag::is_match(*p.pointer()));
+	ASSERT_TRUE(refrange::msgpack::fixarray_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = refrange::msgpack::create_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_array());
 
-	auto c = mpack::msgpack::array();
+	auto c = refrange::msgpack::array();
     int n;
     std::string str;
     bool b;
@@ -569,7 +570,7 @@ TEST(MsgpackTest, array16)
 {
     // packing
 	auto p=refrange::msgpack::create_vector_packer();
-	p << mpack::msgpack::array(16)
+	p << refrange::msgpack::array(16)
         << 1 << "str1" << true << 1.5f
         << 2 << "str2" << false << 1.6f
         << 3 << "str3" << true << 1.7
@@ -584,7 +585,7 @@ TEST(MsgpackTest, array16)
     EXPECT_TRUE(u.is_array());
 
     // array
-	auto c = mpack::msgpack::array();
+	auto c = refrange::msgpack::array();
     u >> c ;
     EXPECT_EQ(16, c.size);
 
@@ -610,7 +611,7 @@ TEST(MsgpackTest, array32)
 {
     // packing
 	auto p=refrange::msgpack::create_vector_packer();
-	auto pc = mpack::msgpack::array(0xFFFF + 1);
+	auto pc = refrange::msgpack::array(0xFFFF + 1);
     p << pc;
     for(size_t i=0; i<pc.size; ++i){
         p << i;
@@ -624,7 +625,7 @@ TEST(MsgpackTest, array32)
     EXPECT_TRUE(u.is_array());
 
     // array
-	auto uc = mpack::msgpack::array();
+	auto uc = refrange::msgpack::array();
     u >> uc ;
     EXPECT_EQ(pc.size, uc.size);
 
@@ -643,20 +644,20 @@ TEST(MsgpackTest, fixmap)
 {
     // packing
 	auto p=refrange::msgpack::create_vector_packer();
-	p << mpack::msgpack::map(3)
+	p << refrange::msgpack::map(3)
         << "key1" << 0
         << "key2" << 1
         << "key3" << 2
 		;
 
     // check
-	ASSERT_TRUE(mpack::msgpack::fixmap_tag::is_match(*p.pointer()));
+	ASSERT_TRUE(refrange::msgpack::fixmap_tag::is_match(*p.pointer()));
 
     // unpack
 	auto u = refrange::msgpack::create_unpacker(p.pointer(), p.size());
     EXPECT_TRUE(u.is_map());
 
-	auto c = mpack::msgpack::map();
+	auto c = refrange::msgpack::map();
     u >> c;
     EXPECT_EQ(3, c.size);
 
@@ -679,7 +680,7 @@ TEST(MsgpackTest, map16)
 {
     // packing
 	auto p=refrange::msgpack::create_vector_packer();
-	p << mpack::msgpack::map(17)
+	p << refrange::msgpack::map(17)
         << "key1" << 0 << "key2" << 1 << "key3" << 2 << "key4" << 3
         << "key5" << 4 << "key6" << 5 << "key7" << 6 << "key8" << 7
         << "key9" << 8 << "key10" << 9 << "key11" << 10 << "key12" << 11
@@ -695,7 +696,7 @@ TEST(MsgpackTest, map16)
     EXPECT_TRUE(u.is_map());
 
     // map
-	auto c = mpack::msgpack::map();
+	auto c = refrange::msgpack::map();
     u >> c ;
     EXPECT_EQ(17, c.size);
 
@@ -719,7 +720,7 @@ TEST(MsgpackTest, map32)
 {
     // packing
 	refrange::msgpack::external_vector_packer p;
-	auto pc = mpack::msgpack::map_context(0xFFFF + 1);
+	auto pc = refrange::msgpack::map_context(0xFFFF + 1);
     p << pc; 
     for(int i=0; i<pc.size; ++i){
         std::stringstream ss;
@@ -735,7 +736,7 @@ TEST(MsgpackTest, map32)
     EXPECT_TRUE(u.is_map());
 
     // map
-	auto uc = mpack::msgpack::map_context();
+	auto uc = refrange::msgpack::map_context();
     u >> uc ;
     EXPECT_EQ(pc.size, uc.size);
 

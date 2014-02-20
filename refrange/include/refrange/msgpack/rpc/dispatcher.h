@@ -1,11 +1,12 @@
 #pragma once
+#include "packedmethod.h"
+#include "../basic_overload.h"
+#include "../utility.h"
+#include "../rpc.h"
 #include <map>
 
-namespace mpack {
+namespace refrange {
 namespace msgpack {
-
-	using namespace refrange::msgpack;
-
 namespace rpc {
 
 class dispatcher

@@ -2,8 +2,10 @@
 #include <functional>
 #include <sstream>
 #include <refrange/msgpack/utility.h>
+#include <refrange/msgpack/basic_overload.h>
 
-namespace mpack {
+
+namespace refrange {
 namespace json {
 
     typedef std::function<size_t(unsigned char *, size_t)> reader_t;
@@ -18,7 +20,7 @@ namespace json {
             : m_reader(reader), m_peek_char(-1)
         {}
 
-        bool parse(::mpack::msgpack::packer &packer, bool is_key=false)
+        bool parse(::refrange::msgpack::packer &packer, bool is_key=false)
         {
             switch(peek_char(true))
             {
@@ -111,7 +113,7 @@ namespace json {
             return m_peek_char;
         }
 
-        bool parse_object(::mpack::msgpack::packer &packer)
+        bool parse_object(::refrange::msgpack::packer &packer)
         {
             // nest packer
 			auto nested = ::refrange::msgpack::create_vector_packer();
@@ -147,12 +149,12 @@ namespace json {
                 }
             }
 
-            packer << ::mpack::msgpack::map(nested);
+            packer << ::refrange::msgpack::map(nested);
 
             return true;
         }
 
-        bool parse_array(::mpack::msgpack::packer &packer)
+		bool parse_array(::refrange::msgpack::packer &packer)
         {
             return false;
         }
@@ -198,7 +200,7 @@ namespace json {
 			return false;
 		}
 
-		bool parse_number(::mpack::msgpack::packer &packer)
+		bool parse_number(::refrange::msgpack::packer &packer)
 		{
 			std::stringstream ss;
 			for (int i = 0; true; ++i)
@@ -216,7 +218,7 @@ namespace json {
 			return true;
 		}
 
-		bool parse_quated_string(::mpack::msgpack::packer &packer, char quote)
+		bool parse_quated_string(::refrange::msgpack::packer &packer, char quote)
 		{
 			// drop first quote
 			assert(m_peek_char == quote);
@@ -252,14 +254,14 @@ namespace json {
         {
         }
 
-        void convert(::mpack::msgpack::unpacker &u)
+        void convert(::refrange::msgpack::unpacker &u)
         {
             if(u.is_array()){
                 write("[");
             }
             else if(u.is_map()){
                 write("{");
-                auto c=::mpack::msgpack::map();
+                auto c=::refrange::msgpack::map();
                 u >> c;
                 for(size_t i=0; i<c.size; ++i){
                     std::string key;
