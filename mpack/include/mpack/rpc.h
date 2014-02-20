@@ -25,10 +25,10 @@ inline void pack_response(packer &response_packer, int id,
         << array(4)
         << 1
         << id
-        << nil_tag() // no error
         ;
+    response_packer.pack_nil();
     if(result_packer.size()==0){
-        response_packer << nil_tag();
+        result_packer.pack_nil();
     }
     else{
         response_packer << result_packer;

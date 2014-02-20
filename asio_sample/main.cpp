@@ -65,7 +65,13 @@ public:
                 while(true)
                 {
                     try {
-                        auto message=unpacker.unpack_a_message();
+						mpack::msgpack::byte_range r;
+						unpacker >> r;
+
+						// call
+						std::vector<unsigned char> response_message;
+						auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
+						self->m_dispatcher->dispatch(response_packer, mpack::msgpack::unpacker(r.begin(), r.end()));
                     }
                     catch(std::exception &ex)
                     {
@@ -73,13 +79,8 @@ public:
                         break;
                     }
 
-                    // call
-                    std::vector<unsigned char> response_message;
-                    auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
-                    self->m_dispatcher.dispatch(response_packer, message);
-
                     // send response
-                    begin_write(response_packer.pointer(), response_packer.size());
+                    //begin_write(response_packer.pointer(), response_packer.size());
                 }
             }
 

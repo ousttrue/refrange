@@ -71,6 +71,8 @@ inline unpacker& operator>>(unpacker &unpacker, std::vector<unsigned char> &t) {
 // collection
 inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return unpacker.unpack_collection(c); }
 
+// only range copy
+inline unpacker& operator>>(unpacker &unpacker, byte_range &r){ return unpacker.unpack(create_buffer(r)); }
 
 } // namespace
 } // namespace

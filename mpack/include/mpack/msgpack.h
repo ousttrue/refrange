@@ -48,28 +48,53 @@ struct no_value_tag{};
 struct single_value_tag{};
 struct sequence_value_tag{};
 
-struct header_value_base_tag
+struct base_tag
+{
+    const unsigned char *begin;
+
+    base_tag(const unsigned char *b)
+        : begin(b)
+    {}
+};
+
+struct header_value_base_tag: public base_tag
 {
     typedef no_read_tag read_category;
     typedef single_value_tag value_category;
+
+    header_value_base_tag(const unsigned char *begin)
+        : base_tag(begin)
+    {}
 };
 
-struct read_single_value_base_tag
+struct read_single_value_base_tag: public base_tag
 {
     typedef read_value_tag read_category;
     typedef single_value_tag value_category;
+
+    read_single_value_base_tag(const unsigned char *begin)
+        : base_tag(begin)
+    {}
 };
 
-struct read_sequence_value_base_tag
+struct read_sequence_value_base_tag: public base_tag
 {
     typedef read_value_tag read_category;
     typedef sequence_value_tag value_category;
+
+    read_sequence_value_base_tag(const unsigned char *begin)
+        : base_tag(begin)
+    {}
 };
 
-struct no_value_base_tag
+struct no_value_base_tag: public base_tag
 {
     typedef no_read_tag read_category;
     typedef no_value_tag value_category;
+
+    no_value_base_tag(const unsigned char *begin)
+        : base_tag(begin)
+    {}
 };
 
 
@@ -84,6 +109,12 @@ struct no_value_base_tag
 struct nil_tag: public no_value_base_tag
 {
     enum bits_t { bits=0xc0 };
+
+    nil_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// false:
@@ -94,6 +125,12 @@ struct false_tag: public header_value_base_tag
 {
     enum bits_t { bits=0xc2 };
     bool value(){ return false; };
+
+    false_tag(const unsigned char *begin)
+        : header_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// true:
@@ -104,6 +141,12 @@ struct true_tag: public header_value_base_tag
 {
     enum bits_t { bits=0xc3 };
     bool value(){ return true; };
+
+    true_tag(const unsigned char *begin)
+        : header_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// positive fixnum stores 7-bit positive integer
@@ -115,13 +158,14 @@ struct positive_fixint_tag: public header_value_base_tag
     enum bits_t { bits=0x00 };
     enum mask_t { mask=0x80 };
 
-    unsigned char head_byte;
-    positive_fixint_tag(unsigned char b)
-        : head_byte(b)
-    {}
+    positive_fixint_tag(const unsigned char *begin)
+        : header_value_base_tag(begin)
+    {
+        assert(is_match(*begin));
+    }
 
     typedef char header_value_type;
-    header_value_type value(){ return static_cast<header_value_type>(head_byte); };
+    header_value_type value(){ return static_cast<header_value_type>(*begin); };
 
     static unsigned char extract_head_byte(unsigned char head_byte)
     {
@@ -143,13 +187,14 @@ struct negative_fixint_tag: public header_value_base_tag
     enum bits_t { bits=0xe0 };
     enum mask_t { mask=0xe0 };
 
-    unsigned char head_byte;
-    negative_fixint_tag(unsigned char b)
-        : head_byte(b)
-    {}
+    negative_fixint_tag(const unsigned char *begin)
+        : header_value_base_tag(begin)
+    {
+        assert(is_match(*begin));
+    }
 
     typedef char header_value_type;
-    header_value_type value(){ return -static_cast<header_value_type>(extract_head_byte(head_byte)); };
+    header_value_type value(){ return -static_cast<header_value_type>(extract_head_byte(*begin)); };
 
     static unsigned char extract_head_byte(unsigned char head_byte)
     {
@@ -171,6 +216,12 @@ struct uint8_tag: public read_single_value_base_tag
     enum bits_t { bits=0xcc };
     typedef read_value_tag value_tag;
     typedef unsigned char read_type;
+
+    uint8_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// uint 16 stores a 16-bit big-endian unsigned integer
@@ -182,6 +233,12 @@ struct uint16_tag: public read_single_value_base_tag
     enum bits_t { bits=0xcd };
     typedef read_value_tag value_tag;
     typedef unsigned short read_type;
+
+    uint16_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// uint 32 stores a 32-bit big-endian unsigned integer
@@ -193,6 +250,12 @@ struct uint32_tag: public read_single_value_base_tag
     enum bits_t { bits=0xce };
     typedef read_value_tag value_tag;
     typedef unsigned int read_type;
+
+    uint32_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// uint 64 stores a 64-bit big-endian unsigned integer
@@ -204,6 +267,12 @@ struct uint64_tag: public read_single_value_base_tag
     enum bits_t { bits=0xcf };
     typedef read_value_tag value_tag;
     typedef unsigned long long read_type;
+
+    uint64_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// int 8 stores a 8-bit signed integer
@@ -215,6 +284,12 @@ struct int8_tag: public read_single_value_base_tag
     enum bits_t { bits=0xd0 };
     typedef read_value_tag value_tag;
     typedef char read_type;
+
+    int8_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// int 16 stores a 16-bit big-endian signed integer
@@ -226,6 +301,12 @@ struct int16_tag: public read_single_value_base_tag
     enum bits_t { bits=0xd1 };
     typedef read_value_tag value_tag;
     typedef short read_type;
+
+    int16_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// int 32 stores a 32-bit big-endian signed integer
@@ -237,6 +318,12 @@ struct int32_tag: public read_single_value_base_tag
     enum bits_t { bits=0xd2 };
     typedef read_value_tag value_tag;
     typedef int read_type;
+
+    int32_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// int 64 stores a 64-bit big-endian signed integer
@@ -248,6 +335,12 @@ struct int64_tag: public read_single_value_base_tag
     enum bits_t { bits=0xd3 };
     typedef read_value_tag value_tag;
     typedef long long read_type;
+
+    int64_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// float 32 stores a floating point number in IEEE 754 single precision floating point number format:
@@ -259,6 +352,12 @@ struct float32_tag: public read_single_value_base_tag
     enum bits_t { bits=0xca };
     typedef read_value_tag value_tag;
     typedef float read_type;
+
+    float32_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// float 64 stores a floating point number in IEEE 754 double precision floating point number format:
@@ -270,6 +369,12 @@ struct float64_tag: public read_single_value_base_tag
     enum bits_t { bits=0xcb };
     typedef read_value_tag value_tag;
     typedef double read_type;
+
+    float64_tag(const unsigned char *begin)
+        : read_single_value_base_tag(begin)
+    {
+        assert(*begin==bits);
+    }
 };
 
 /// fixstr stores a byte array whose length is upto 31 bytes:
@@ -281,10 +386,14 @@ struct fixstr_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xa0 };
     enum mask_t { mask=0xe0};
 
-    unsigned char len;
-    fixstr_tag(unsigned char l)
-        : len(l)
+    fixstr_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned char len()const
+    {
+        return extract_head_byte(*begin);
+    }
 
     static unsigned char extract_head_byte(unsigned char head_byte)
     {
@@ -306,10 +415,14 @@ struct str8_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xd9 };
     typedef sequence_value_tag value_tag;
 
-    unsigned char len;
-    str8_tag(unsigned char l)
-        : len(l)
+    str8_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned char len()const
+    {
+        return *(begin+1);
+    }
 };
 
 /// str 16 stores a byte array whose length is upto (2^16)-1 bytes:
@@ -321,10 +434,14 @@ struct str16_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xda };
     typedef sequence_value_tag value_tag;
 
-    unsigned short len;
-    str16_tag(unsigned short l)
-        : len(l)
+    str16_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned short len()const
+    {
+        return *((unsigned short*)(begin+1));
+    }
 };
 
 /// str 32 stores a byte array whose length is upto (2^32)-1 bytes:
@@ -336,10 +453,14 @@ struct str32_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xdb };
     typedef sequence_value_tag value_tag;
 
-    unsigned int len;
-    str32_tag(unsigned int l)
-        : len(l)
+    str32_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned int len()const
+    {
+        return *((unsigned int*)(begin+1));
+    }
 };
 
 /// bin 8 stores a byte array whose length is upto (2^8)-1 bytes:
@@ -351,10 +472,14 @@ struct bin8_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xc4 };
     typedef sequence_value_tag value_tag;
 
-    unsigned char len;
-    bin8_tag(unsigned char l)
-        : len(l)
+    bin8_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned char len()const
+    {
+        return *(begin+1);
+    }
 };
 
 /// bin 16 stores a byte array whose length is upto (2^16)-1 bytes:
@@ -366,10 +491,14 @@ struct bin16_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xc5 };
     typedef sequence_value_tag value_tag;
 
-    unsigned short len;
-    bin16_tag(unsigned short l)
-        : len(l)
+    bin16_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned short len()const
+    {
+        return *((unsigned short*)(begin+1));
+    }
 };
 
 /// bin 32 stores a byte array whose length is upto (2^32)-1 bytes:
@@ -381,10 +510,14 @@ struct bin32_tag: public read_sequence_value_base_tag
     enum bits_t { bits=0xc6 };
     typedef sequence_value_tag value_tag;
 
-    unsigned int len;
-    bin32_tag(unsigned int l)
-        : len(l)
+    bin32_tag(const unsigned char *begin)
+        : read_sequence_value_base_tag(begin)
     {}
+
+    unsigned int len()const
+    {
+        return *((unsigned int*)(begin+1));
+    }
 };
 
 /// fixarray stores an array whose length is upto 15 elements:
@@ -397,9 +530,8 @@ struct fixarray_tag: public no_value_base_tag
     enum bits_t { bits=0x90 };
     enum mask_t { mask=0xf0 };
 
-    unsigned char len;
-    fixarray_tag(unsigned char l)
-        : len(l)
+    fixarray_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
     {}
 
     static unsigned char extract_head_byte(unsigned char head_byte)
@@ -422,9 +554,8 @@ struct array16_tag: public no_value_base_tag
     enum is_array_t { is_array=1 };
     enum bits_t { bits=0xdc };
 
-    unsigned short len;
-    array16_tag(unsigned short l)
-        : len(l)
+    array16_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
     {}
 };
 
@@ -438,9 +569,8 @@ struct array32_tag: public no_value_base_tag
     enum bits_t { bits=0xdd };
     typedef no_value_tag value_tag;
 
-    unsigned int len;
-    array32_tag(unsigned int l)
-        : len(l)
+    array32_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
     {}
 };
 
@@ -455,9 +585,8 @@ struct fixmap_tag: public no_value_base_tag
     enum mask_t { mask=0xF0 };
     typedef no_value_tag value_tag;
 
-    unsigned char len;
-    fixmap_tag(unsigned char l)
-        : len(l)
+    fixmap_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
     {}
 
     static unsigned char extract_head_byte(unsigned char head_byte)
@@ -481,9 +610,8 @@ struct map16_tag: public no_value_base_tag
     enum bits_t { bits=0xde };
     typedef no_value_tag value_tag;
 
-    unsigned short len;
-    map16_tag(unsigned short l)
-        : len(l)
+    map16_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
     {}
 };
 
@@ -497,9 +625,8 @@ struct map32_tag: public no_value_base_tag
     enum bits_t { bits=0xdf };
     typedef no_value_tag value_tag;
 
-    unsigned int len;
-    map32_tag(unsigned int l)
-        : len(l)
+    map32_tag(const unsigned char *begin)
+        : no_value_base_tag(begin)
     {}
 };
 
@@ -579,6 +706,7 @@ struct ext32_tag
     enum bits_t { bits=0xc9 };
 };
 #endif
+
 
 //////////////////////////////////////////////////////////////////////////////
 // packer
@@ -950,23 +1078,22 @@ class byte_range
     const unsigned char *m_end;
     const unsigned char *m_current;
 
-    // 0-255 (-1 is invalid)
-    int m_peek_byte;
-
 public:
+    byte_range()
+        : m_begin(0), m_end(0), m_current(m_begin)
+    {} 
+
     byte_range(const unsigned char *begin, const unsigned char *end)
-        : m_begin(begin), m_end(end), m_current(m_begin), m_peek_byte(-1)
+        : m_begin(begin), m_end(end), m_current(m_begin)
     {}
+
+    const unsigned char *begin()const{ return m_begin; }
+    const unsigned char *end()const{ return m_end; }
+    const unsigned char *current()const{ return m_current; }
 
     unsigned char peek_byte()
     {
-        if(m_peek_byte==-1){
-            unsigned char byte;
-            auto size=read(&byte, 1);
-            assert(size==1);
-            m_peek_byte=byte;
-        }
-        return m_peek_byte;
+        return *m_current;
     }
 
     unsigned char read_byte()
@@ -975,6 +1102,11 @@ public:
         read_value<unsigned char>(&c);
         return c;
     }
+
+    void skip(size_t s)
+    {
+        m_current+=s;
+    } 
 
     template<typename T, typename W>
         void read_value(W *w)
@@ -1006,21 +1138,10 @@ public:
             return 0;
         }
 
-        size_t peek_size=0;
-        if(m_peek_byte!=-1){
-            // first peek byte
-            *p=static_cast<unsigned char>(m_peek_byte);
-            m_peek_byte=-1;
-
-            --len;
-            ++p;
-            ++peek_size;
-        }
-
         size_t copysize=std::min(len, remain_size());
         std::copy(m_current, m_current+copysize, p);
         m_current+=copysize;
-        return peek_size+copysize;
+        return copysize;
     }
 };
 
@@ -1072,7 +1193,8 @@ private:
         void _read_from(Tag &tag, byte_range &reader, read_value_tag, sequence_value_tag)
         {
             // drop value
-            for(size_t i=0; i<tag.len; ++i){
+			auto len=tag.len();
+            for(size_t i=0; i<len; ++i){
                 unsigned char c;
                 auto size=reader.read(&c, sizeof(c));
             }
@@ -1128,6 +1250,7 @@ private:
         }
 };
 
+
 // avoid warning
 struct bool_buffer: public base_buffer
 {
@@ -1176,6 +1299,27 @@ private:
 };
 
 
+struct byte_range_buffer: public base_buffer
+{
+    byte_range &m_range;
+
+    byte_range_buffer(byte_range &range)
+        : m_range(range)
+    {
+    }
+
+    template<class Tag
+        >
+        void read_from(Tag &tag, byte_range &reader)
+        {
+			// advance reader
+            base_buffer::read_from(tag, reader);
+
+            m_range=byte_range(tag.begin, reader.current());
+        }
+};
+
+
 template<typename Value>
 struct sequence_buffer: public base_buffer
 {
@@ -1213,10 +1357,11 @@ struct sequence_buffer: public base_buffer
     template<class Tag>
         void _read_from(Tag &tag, byte_range &reader, read_value_tag, sequence_value_tag)
         {
-            if(tag.len==0){
+			auto len=tag.len();
+            if(len==0){
                 return;
             }
-            m_v.resize(tag.len);
+            m_v.resize(len);
             auto size=reader.read((unsigned char*)&m_v[0], m_v.size());
             assert(size==m_v.size());
         }
@@ -1244,6 +1389,11 @@ inline arithmetic_buffer<Value> create_buffer(Value &t
 inline bool_buffer create_buffer(bool &t)
 {
     return bool_buffer(t);
+}
+
+inline byte_range_buffer create_buffer(byte_range &t)
+{
+    return byte_range_buffer(t);
 }
 
 inline sequence_buffer<std::string> create_buffer(std::string &t)
@@ -1343,108 +1493,90 @@ public:
     template<class BUFFER>
         unpacker& unpack(BUFFER &b)
         {
-            auto head_byte=m_range.read_byte();
-            switch(head_byte)
+            auto p_head_byte=m_range.current();
+			switch(m_range.read_byte())
             {
                 case nil_tag::bits:
-                    b.read_from(nil_tag(), m_range);
+                    b.read_from(nil_tag(p_head_byte), m_range);
                     break;
 
                 case false_tag::bits:
-                    b.read_from(false_tag(), m_range);
+                    b.read_from(false_tag(p_head_byte), m_range);
                     break;
 
                 case true_tag::bits:
-                    b.read_from(true_tag(), m_range);
+                    b.read_from(true_tag(p_head_byte), m_range);
                     break;
 
                 case float32_tag::bits:
-                    b.read_from(float32_tag(), m_range);
+                    b.read_from(float32_tag(p_head_byte), m_range);
                     break;
 
                 case float64_tag::bits:
-                    b.read_from(float64_tag(), m_range);
+                    b.read_from(float64_tag(p_head_byte), m_range);
                     break;
 
                 case uint8_tag::bits:
-                    b.read_from(uint8_tag(), m_range);
+                    b.read_from(uint8_tag(p_head_byte), m_range);
                     break;
 
                 case uint16_tag::bits:
-                    b.read_from(uint16_tag(), m_range);
+                    b.read_from(uint16_tag(p_head_byte), m_range);
                     break;
 
                 case uint32_tag::bits:
-                    b.read_from(uint32_tag(), m_range);
+                    b.read_from(uint32_tag(p_head_byte), m_range);
                     break;
 
                 case uint64_tag::bits:
-                    b.read_from(uint64_tag(), m_range);
+                    b.read_from(uint64_tag(p_head_byte), m_range);
                     break;
 
                 case int8_tag::bits:
-                    b.read_from(int8_tag(), m_range);
+                    b.read_from(int8_tag(p_head_byte), m_range);
                     break;
 
                 case int16_tag::bits:
-                    b.read_from(int16_tag(), m_range);
+                    b.read_from(int16_tag(p_head_byte), m_range);
                     break;
 
                 case int32_tag::bits:
-                    b.read_from(int32_tag(), m_range);
+                    b.read_from(int32_tag(p_head_byte), m_range);
                     break;
 
                 case int64_tag::bits:
-                    b.read_from(int64_tag(), m_range);
+                    b.read_from(int64_tag(p_head_byte), m_range);
                     break;
 
                     // sequence
                 case bin8_tag::bits:
-                    {
-                        unsigned char len;
-                        m_range.read_value<unsigned char>(&len);
-                        b.read_from(bin8_tag(len), m_range);
-                    }
+                    m_range.skip(1);
+                    b.read_from(bin8_tag(p_head_byte), m_range);
                     break;
 
                 case bin16_tag::bits:
-                    {
-                        unsigned short len;
-                        m_range.read_value<unsigned short>(&len);
-                        b.read_from(bin16_tag(len), m_range);
-                    }
+                    m_range.skip(2);
+                    b.read_from(bin16_tag(p_head_byte), m_range);
                     break;
 
                 case bin32_tag::bits:
-                    {
-                        unsigned int len;
-                        m_range.read_value<unsigned int>(&len);
-                        b.read_from(bin32_tag(len), m_range);
-                    }
+                    m_range.skip(4);
+                    b.read_from(bin32_tag(p_head_byte), m_range);
                     break;
 
                 case str8_tag::bits:
-                    {
-                        unsigned char len;
-                        m_range.read_value<unsigned char>(&len);
-                        b.read_from(str8_tag(len), m_range);
-                    }
+                    m_range.skip(1);
+                    b.read_from(str8_tag(p_head_byte), m_range);
                     break;
 
                 case str16_tag::bits:
-                    {
-                        unsigned short len;
-                        m_range.read_value<unsigned short>(&len);
-                        b.read_from(str16_tag(len), m_range);
-                    }
+                    m_range.skip(2);
+                    b.read_from(str16_tag(p_head_byte), m_range);
                     break;
 
                 case str32_tag::bits:
-                    {
-                        unsigned int len;
-                        m_range.read_value<unsigned int>(&len);
-                        b.read_from(str32_tag(len), m_range);
-                    }
+                    m_range.skip(4);
+                    b.read_from(str32_tag(p_head_byte), m_range);
                     break;
 
                     // collection
@@ -1468,18 +1600,17 @@ public:
 #endif
 
                 default:
-                    if(positive_fixint_tag::is_match(head_byte)){
-                        // char
-                        b.read_from(positive_fixint_tag(head_byte), m_range);
+                    if(positive_fixint_tag::is_match(*p_head_byte)){
+                        // fixint
+                        b.read_from(positive_fixint_tag(p_head_byte), m_range);
                     }
-                    else if(negative_fixint_tag::is_match(head_byte)){
-                        // uchar
-                        b.read_from(negative_fixint_tag(head_byte), m_range);
+                    else if(negative_fixint_tag::is_match(*p_head_byte)){
+                        // fixint
+                        b.read_from(negative_fixint_tag(p_head_byte), m_range);
                     }
-                    else if(fixstr_tag::is_match(head_byte)){
-                        // str todo
-                        auto len=fixstr_tag::extract_head_byte(head_byte);
-                        b.read_from(fixstr_tag(len), m_range);
+                    else if(fixstr_tag::is_match(*p_head_byte)){
+                        // fixstr
+                        b.read_from(fixstr_tag(p_head_byte), m_range);
                     }
                     else {
                         throw std::invalid_argument(__FUNCTION__);
