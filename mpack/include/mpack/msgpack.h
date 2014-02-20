@@ -45,8 +45,10 @@ namespace msgpack {
 
     struct no_value_tag{};
     struct header_value_tag{};
+    struct header_bool_value_tag{};
     struct read_value_tag{};
     struct sequence_value_tag{};
+    struct collection_value_tag{};
 
     ///
     /// message types
@@ -69,10 +71,8 @@ namespace msgpack {
     struct false_tag
     {
         enum bits_t { bits=0xc2 };
-        typedef header_value_tag value_tag;
-
-        typedef bool header_value_type;
-        header_value_type value(){ return false; };
+        typedef header_bool_value_tag value_tag;
+        bool value(){ return false; };
     };
 
     /// true:
@@ -82,10 +82,8 @@ namespace msgpack {
     struct true_tag
     {
         enum bits_t { bits=0xc3 };
-        typedef header_value_tag value_tag;
-
-        typedef bool header_value_type;
-        header_value_type value(){ return true; };
+        typedef header_bool_value_tag value_tag;
+        bool value(){ return true; };
     };
 
     /// positive fixnum stores 7-bit positive integer
@@ -994,6 +992,13 @@ namespace msgpack {
         }
 
     template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, Value *v, header_bool_value_tag, bool_copy_tag)
+        {
+            *v = tag.value();
+        }
+
+
+    template<class Tag, class Value>
         void read_and_assign(Tag &tag, reader_t &reader, Value *v, no_value_tag, nocopy_tag)
         {
             // do nothing
@@ -1011,6 +1016,12 @@ namespace msgpack {
 
     template<class Tag, class Value>
         void read_and_assign(Tag &tag, reader_t &reader, Value *v, header_value_tag, nocopy_tag)
+        {
+            // do nothing
+        }
+
+    template<class Tag, class Value>
+        void read_and_assign(Tag &tag, reader_t &reader, Value *v, header_bool_value_tag, nocopy_tag)
         {
             // do nothing
         }
@@ -1091,7 +1102,7 @@ namespace msgpack {
         struct is_allow<Tag, Value
         , typename std::enable_if<std::is_integral<typename Tag::read_type>::value>::type
         , typename std::enable_if<std::is_integral<Value>::value>::type
-        //, typename std::enable_if<sizeof(Tag::read_type)<=sizeof(Value)>::type
+        , typename std::enable_if<sizeof(Tag::read_type)<=sizeof(Value)>::type
         >
         {
             static const bool value = true;
@@ -1100,7 +1111,7 @@ namespace msgpack {
         struct is_allow<Tag, Value
         , typename std::enable_if<std::is_integral<typename Tag::header_value_type>::value>::type
         , typename std::enable_if<std::is_integral<Value>::value>::type
-        //, typename std::enable_if<sizeof(Tag::header_value_type)<=sizeof(Value)>::type
+        //, typename std::enable_if<sizeof(Tag::header_value_type)<=sizeof(Value)>::type // ?
         >
         {
             static const bool value = true;
@@ -1109,8 +1120,19 @@ namespace msgpack {
         struct is_allow<Tag, Value
         , typename std::enable_if<std::is_floating_point<typename Tag::read_type>::value>::type
         , typename std::enable_if<std::is_floating_point<Value>::value>::type
-        //, typename std::enable_if<sizeof(Tag::read_type)<=sizeof(Value)>::type
+        , typename std::enable_if<sizeof(Tag::read_type)<=sizeof(Value)>::type
         >
+        {
+            static const bool value = true;
+        };
+    // bool
+    template<>
+        struct is_allow<true_tag, bool>
+        {
+            static const bool value = true;
+        };
+    template<>
+        struct is_allow<false_tag, bool>
         {
             static const bool value = true;
         };
