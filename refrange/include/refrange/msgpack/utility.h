@@ -56,7 +56,7 @@ inline packer create_packer(const mutable_range &r)
     };
 
     auto pointer=[w]()->const unsigned char *{
-        return w->get_range().begin;
+        return w->get_range().begin();
     };
 
     auto size=[w]()->size_t{
