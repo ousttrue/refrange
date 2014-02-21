@@ -1,5 +1,6 @@
 file(GLOB SRCS 
     *
+    ../refrange/include/**/*.h
     )
 include_directories(
     ${CMAKE_SOURCE_DIR}/gtest/include

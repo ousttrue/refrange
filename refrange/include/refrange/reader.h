@@ -86,6 +86,14 @@ public:
         }
         return m_current;
     }
+
+    void increment()
+    {
+        if(m_current+1>m_range.end()){
+            throw std::range_error(__FUNCTION__);
+        }
+        ++m_current;
+    }
 };
 
 
@@ -100,6 +108,7 @@ public:
     {
         auto begin=current();
         auto end=find('\n');
+        increment();
         return immutable_range(begin, end);
     }
 };
