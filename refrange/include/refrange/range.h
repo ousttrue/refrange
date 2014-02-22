@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <assert.h>
+#include "text.h"
 
 
 namespace refrange {
@@ -26,6 +27,7 @@ class range
 {
     T m_begin;
     T m_end;
+	typedef std::function<bool(T)> pred;
 
 public:
     range()
@@ -45,7 +47,8 @@ public:
     typename value_from_pointer<T>::type &operator[](size_t index){ return m_begin[index]; }
 
     std::string to_str()const{ return std::string(m_begin, m_end); }
-    int to_int()const{ 
+    int to_int(){ 
+        // todo: ltrim
         int n = 0;
         for (auto p = m_begin; p != m_end; ++p)
         { 
@@ -98,17 +101,17 @@ public:
         return r==s.end();
     }
 
-	range<T> find_range_if(std::function<bool(T)> pred)
+	range<T> find_range_if(const pred &func)const
 	{
-		return find_range_if(pred, m_begin);
+		return find_range_if(func, m_begin);
 	}
 
-	range<T> find_range_if(std::function<bool(T)> pred, T p)
+	range<T> find_range_if(const pred &func, T p)const
 	{
 		T begin = p;
         // find match
         for(; begin!=m_end; ++begin){
-            if(pred(begin)){
+            if(func(begin)){
                 break;
             }
         }
@@ -118,19 +121,14 @@ public:
         // find not match
         auto end=begin+1;
         for(; end!=m_end; ++end){
-            if(!pred(end)){
+            if(!func(end)){
                 break;
             }
         }
         return immutable_range(begin, end);
     }
 
-    static bool is_space(T t)
-    {
-        return (*t == ' ');
-    }
-
-    std::list<range<T>> split(char c)
+    std::list<range<T>> split(char c)const
     {
         auto delimiter=[c](T t)
         {
@@ -140,7 +138,12 @@ public:
         return split(delimiter);
     }
 
-    std::list<range<T>> split(std::function<bool(T)> delimiter=&is_space)
+    std::list<range<T>> split()const
+    {
+        return split(&text::is_space<T>);
+    }
+
+    std::list<range<T>> split(const pred &func)const
     {
         std::list<range<T>> splited;
         if(m_begin==m_end){
@@ -149,7 +152,7 @@ public:
 
         auto begin=m_begin;
         while(begin!=m_end){
-			auto range = find_range_if(std::not1(delimiter), begin);
+			auto range = find_range_if(std::not1(func), begin);
             if(!range){
                 break;
             }
@@ -159,9 +162,9 @@ public:
         return splited;
     }
 
-    range<T> &ltrim(std::function<bool(T)> delimiter=&is_space)
+    range<T> &ltrim()
     {
-        auto range=find_range_if(is_space);
+        auto range=find_range_if(&text::is_space<T>);
         if(range){
             m_begin=range.end();
         }
@@ -169,9 +172,10 @@ public:
         return *this;
     }
 
-    range<T> &trim(std::function<bool(T)> pred=&is_space)
+    range<T> &trim()
     {
         ltrim();
+		// rtrim();
 
         return *this;
     }
@@ -220,7 +224,7 @@ inline std::vector<unsigned char> readfile(const char *path)
     }
 
 	ifs.seekg (0, std::ios::end);
-	buf.resize(ifs.tellg());
+	buf.resize((size_t)ifs.tellg());
     if(buf.empty()){
         return buf;
     }

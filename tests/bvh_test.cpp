@@ -41,17 +41,17 @@ TEST(BvhTest, loader)
     // hierarchy
 	refrange::text::bvh::hierarchy hierarchy;
 
-	refrange::text::bvh::joint root{
+	refrange::text::bvh::joint root(
 		"root_name",
 		{ 0, 0, 0 }
-	};
+	);
 	hierarchy.value = root;
 
 	// j1
-	refrange::text::bvh::joint j1{
+	refrange::text::bvh::joint j1(
 		"joint1",
 		{ 0, 0, 0 }
-	};
+	);
 	hierarchy.children.push_back({ j1 });
 
 	refrange::text::bvh::joint end_site{

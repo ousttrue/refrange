@@ -2,6 +2,7 @@
 #include "reader.h"
 #include "../tree.h"
 #include <memory>
+#include <array>
 
 
 namespace refrange {
@@ -22,10 +23,34 @@ struct vec3
 };
 
 
+enum channel_t
+{
+    channel_None,
+    channel_Xposition,
+    channel_Yposition,
+    channel_Zposition,
+    channel_Xrotation,
+    channel_Yrotation,
+    channel_Zrotation,
+};
+
+
 struct joint
 {
     std::string name;
     vec3 offset;
+
+    std::array<channel_t, 6> channels;
+    unsigned char channel_size;
+
+    joint()
+        : channel_size(0)
+    {
+    }
+
+    joint(const std::string &_name, const vec3 _o)
+        : name(_name), offset(_o), channel_size(0)
+    {}
 
     bool operator==(const joint &rhs)const
     {
@@ -56,22 +81,27 @@ public:
     }
 
 private:
+
+    void assign_offset(joint &j, const immutable_range &r)
+    {
+        auto splited=r.split();
+        auto it=splited.begin();
+        assert(it->to_str()=="OFFSET");
+        ++it;
+        j.offset.x=it->to_int();
+        ++it;
+        j.offset.y=it->to_int();
+        ++it;
+        j.offset.z=it->to_int();
+    }
+
     bool parse_joint(line_reader &reader, hierarchy *parent)
     {
-        {
-            auto offsets_line=reader.get_line().trim();
-            auto splited=offsets_line.split();
-            auto it=splited.begin();
-            assert(it->to_str()=="OFFSET");
-            ++it;
-            parent->value.offset.x=it->to_int();
-            ++it;
-            parent->value.offset.y=it->to_int();
-            ++it;
-            parent->value.offset.z=it->to_int();
-        }
+        auto offsets_line=reader.get_line().trim();
+        assign_offset(parent->value, offsets_line);
 
         auto channels_line=reader.get_line().trim();
+        //assign_channel(parent->value, channels_line);
 
         while(true)
         {
@@ -100,18 +130,8 @@ private:
                 auto open_line=reader.get_line().trim();
                 assert(open_line=="{");
 
-                {
-                    auto offsets_line=reader.get_line().trim();
-                    auto splited=offsets_line.split();
-                    auto it=splited.begin();
-                    assert(it->to_str()=="OFFSET");
-                    ++it;
-                    parent->children.back().value.offset.x=it->to_int();
-                    ++it;
-                    parent->children.back().value.offset.y=it->to_int();
-                    ++it;
-                    parent->children.back().value.offset.z=it->to_int();
-                }
+                auto offsets_line=reader.get_line().trim();
+                assign_offset(parent->children.back().value, offsets_line);
 
                 auto close_line=reader.get_line().trim();
                 assert(close_line=="}");
