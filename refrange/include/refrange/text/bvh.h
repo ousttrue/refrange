@@ -33,6 +33,7 @@ struct joint
     }
 };
 
+
 typedef node<joint> hierarchy;
 
 class loader
@@ -107,7 +108,7 @@ private:
 			}
 
 			joint end;
-			end.name = it->to_str();
+			//end.name = it->to_str();
 
 			auto offsets = reader.get_line().split();
 			{

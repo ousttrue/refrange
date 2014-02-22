@@ -34,7 +34,7 @@ TEST(BvhTest, loader)
 	hierarchy.value = root;
 
 	refrange::text::bvh::joint end_site{
-		"Site",
+		"",
 		{ 0, 10, 0 }
 	};
 	hierarchy.children.push_back({end_site});
