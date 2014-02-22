@@ -77,17 +77,17 @@ inline unpacker& operator>>(unpacker &unpacker, collection_context &c){ return u
 inline unpacker& operator>>(unpacker &unpacker, immutable_range &r)
 { 
     if(unpacker.is_array()){
-        auto begin=unpacker.range().current();
+        auto begin=unpacker.range().get_current();
         auto c=array();
         unpacker >> c;
         for(size_t i=0; i<c.size; ++i){
 			immutable_range br;
             unpacker >> br;
         }
-		r = immutable_range(begin, unpacker.range().current());
+		r = immutable_range(begin, unpacker.range().get_current());
     }
     else if(unpacker.is_map()){
-        auto begin=unpacker.range().current();
+		auto begin = unpacker.range().get_current();
         auto c=array();
         unpacker >> c;
         for(size_t i=0; i<c.size; ++i){
@@ -97,7 +97,7 @@ inline unpacker& operator>>(unpacker &unpacker, immutable_range &r)
             // value
             unpacker >> br;
         }
-		r = immutable_range(begin, unpacker.range().current());
+		r = immutable_range(begin, unpacker.range().get_current());
     }
     else {
         return unpacker.unpack(create_buffer(r)); 

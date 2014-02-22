@@ -1,4 +1,4 @@
-#include <refrange/range.h>
+#include <refrange/reader.h>
 #include <gtest/gtest.h>
 
 
@@ -13,7 +13,7 @@ static bool is_not_space(const unsigned char *p)
 }
 
 
-TEST(RangeTest, bits) 
+TEST(RangeTest, range) 
 {
     auto buf="  abc ef ghi  ";
 
@@ -24,4 +24,16 @@ TEST(RangeTest, bits)
 		(const unsigned char*)(buf+2), 
 		(const unsigned char*)(buf+5)), 
 		found);
+}
+
+TEST(RangeTest, text_reader) 
+{
+    auto buf=" 1 2 3";
+    auto range=refrange::strrange(buf);
+    refrange::text_reader reader(range);
+
+
+    EXPECT_EQ(1, reader.get_int());
+    EXPECT_EQ(2, reader.get_int());
+    EXPECT_EQ(3, reader.get_int());
 }

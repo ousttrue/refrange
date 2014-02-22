@@ -1450,7 +1450,7 @@ public:
     template<class BUFFER>
         unpacker& unpack(BUFFER &b)
         {
-            auto p_head_byte=m_range.current();
+            auto p_head_byte=m_range.get_current();
 			switch(m_range.read_byte())
             {
                 case nil_tag::bits:

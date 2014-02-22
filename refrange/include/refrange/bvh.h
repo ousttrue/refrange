@@ -1,5 +1,6 @@
 #pragma once
 #include "reader.h"
+#include "tree.h"
 #include <memory>
 
 
@@ -7,16 +8,39 @@ namespace refrange {
 namespace bvh {
 
 
-class node
+struct vec3
 {
+    float x;
+    float y;
+    float z;
+
+    bool operator==(const vec3 &rhs)const
+    {
+        return x==rhs.x && y==rhs.y && z==rhs.z;
+    }
 };
 
 
+struct joint
+{
+    std::string name;
+    vec3 offset;
+
+    bool operator==(const joint &rhs)const
+    {
+        return name==rhs.name && offset==rhs.offset;
+    }
+};
+
+typedef node<joint> hierarchy;
+
 class loader
 {
-    std::shared_ptr<node> m_root;
+    hierarchy m_hierarchy;
 
 public:
+    hierarchy &get_hierarchy(){ return m_hierarchy; }
+
     bool load(const immutable_range &r)
     {
         line_reader reader(r);
@@ -30,7 +54,7 @@ public:
     }
 
 private:
-    bool parse_hierarchy_node(line_reader &reader)
+    bool parse_hierarchy_node(line_reader &reader, hierarchy &parent)
     {
 		auto line = reader.get_line();
         auto tokens=line.split();
@@ -38,27 +62,68 @@ private:
             return false;
         }
 
-		auto key = tokens.front();
+        auto it=tokens.begin();
+        if(it==tokens.end()){
+            return false;
+        }
+		auto key = *it;
+		++it;
         if(key=="ROOT"){
-            assert(!m_root);
+            // root
+            auto &root=m_hierarchy.value;
+            root.name=it->to_str();
+
             if(reader.get_line().trim()!="{"){
                 return false;
             }
-            auto offsets=reader.get_line().split();
+
+			auto offsets = reader.get_line().split();
+			{
+				auto it = offsets.begin();
+				if (*it != "OFFSET"){
+					return false;
+				}
+				++it;
+				root.offset.x = it->to_int();
+				++it;
+				root.offset.y = it->to_int();
+				++it;
+				root.offset.z = it->to_int();
+			}
+
             auto channels=reader.get_line().split();
 
             // nest
-			if (!parse_hierarchy_node(reader)){
+			if (!parse_hierarchy_node(reader, m_hierarchy)){
 				return false;
 			}
 
 			return reader.get_line().trim() == "}";
         }
-        else if(key=="End"){
-            if(reader.get_line().trim()!="{"){
-                return false;
-            }
-            auto offsets=reader.get_line().split();
+		else if (key == "End"){
+			if (reader.get_line().trim() != "{"){
+				return false;
+			}
+
+			joint end;
+			end.name = it->to_str();
+
+			auto offsets = reader.get_line().split();
+			{
+				auto it = offsets.begin();
+				if (*it != "OFFSET"){
+					return false;
+				}
+				++it;
+				end.offset.x = it->to_int();
+				++it;
+				end.offset.y = it->to_int();
+				++it;
+				end.offset.z = it->to_int();
+			}
+
+			parent.children.push_back({ end });
+
             return reader.get_line().trim()=="}";
         }
         else{
@@ -73,7 +138,7 @@ private:
         if(line!="HIERARCHY"){
             return false;
         }
-        if(!parse_hierarchy_node(reader)){
+        if(!parse_hierarchy_node(reader, m_hierarchy)){
             return false;
         }
         return true;

@@ -43,6 +43,16 @@ public:
 
     typename value_from_pointer<T>::type &operator[](size_t index){ return m_begin[index]; }
 
+    std::string to_str()const{ return std::string(m_begin, m_end); }
+    int to_int()const{ 
+        int n = 0;
+        for (auto p = m_begin; p != m_end; ++p)
+        { 
+            n = n * 10 + (*p-'0');
+        }
+        return n;
+    }
+
     bool operator==(const range<T> &s)const
     {
         auto l=m_begin;
