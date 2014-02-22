@@ -5,25 +5,6 @@
 namespace refrange {
 namespace text {
 
-inline bool is_int(const unsigned char *p)
-{
-    switch(*p)
-    {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return true;
-    }
-    return false;
-}
-
 
 class text_reader: public range_reader
 {
@@ -34,7 +15,7 @@ public:
 
     int get_int()
     {
-        auto range=get_range().find_range_if(&is_int, get_current());
+        auto range=get_range().find_range_if(&is_int<type>, get_current());
         if(!range){
             throw std::exception(__FUNCTION__);
         }

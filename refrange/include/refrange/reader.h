@@ -11,6 +11,8 @@ class range_reader
     const unsigned char *m_current;
 
 public:
+    typedef immutable_range::type type;
+
     range_reader(const immutable_range &range)
         : m_range(range), m_current(m_range.begin())
     {}

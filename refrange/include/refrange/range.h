@@ -30,6 +30,8 @@ class range
 	typedef std::function<bool(T)> pred;
 
 public:
+    typedef T type;
+
     range()
         : m_begin(0), m_end(0)
     {}
