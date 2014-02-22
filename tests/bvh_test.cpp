@@ -42,3 +42,29 @@ TEST(BvhTest, loader)
     EXPECT_EQ(hierarchy, bvh.get_hierarchy());
 }
 
+TEST(BvhTest, load_from_file) 
+{
+    auto path="../../samples/sample.bvh";
+    auto buf=refrange::readfile(path);
+
+	refrange::text::bvh::loader bvh;
+    EXPECT_TRUE(bvh.load(refrange::vectorrange(buf)));
+
+    // hierarchy
+	refrange::text::bvh::hierarchy hierarchy;
+
+	refrange::text::bvh::joint root{
+		"root_name",
+		{ 0, 0, 0 }
+	};
+	hierarchy.value = root;
+
+	refrange::text::bvh::joint end_site{
+		"",
+		{ 0, 10, 0 }
+	};
+	hierarchy.children.push_back({end_site});
+
+    EXPECT_EQ(hierarchy, bvh.get_hierarchy());
+}
+

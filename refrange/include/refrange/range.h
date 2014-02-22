@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <list>
 #include <functional>
+#include <fstream>
+#include <vector>
 #include <assert.h>
 
 
@@ -178,6 +180,44 @@ inline immutable_range strrange(const char *begin)
             (const unsigned char *)begin, 
             (const unsigned char *)end
             );
+}
+
+
+inline immutable_range emptyrange()
+{
+    return immutable_range(
+            (const unsigned char*)0,
+            (const unsigned char*)0);
+}
+
+
+inline immutable_range vectorrange(const std::vector<unsigned char> &v)
+{
+    if(v.empty()){
+        return emptyrange();
+    }
+
+    return immutable_range(&v.front(), &v.back());
+}
+
+
+inline std::vector<unsigned char> readfile(const char *path)
+{
+    std::vector<unsigned char> buf;
+    std::ifstream ifs(path, std::ios::binary);
+    if(!ifs){
+        return buf;
+    }
+
+	ifs.seekg (0, std::ios::end);
+	buf.resize(ifs.tellg());
+    if(buf.empty()){
+        return buf;
+    }
+    ifs.seekg (0, std::ios::beg);
+	ifs.read ((char*)&buf[0], buf.size());
+
+    return std::move(buf);
 }
 
 
