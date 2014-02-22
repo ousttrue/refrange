@@ -19,7 +19,6 @@ template<class T>
    };
 
 
-
 template<typename T>
 class range
 {

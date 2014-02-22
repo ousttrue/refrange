@@ -14,9 +14,10 @@ Msgpackを自分用に再実装したりする。
 
 ToDo
 ----
-* refrangeに移動する
 * refrange::rangeの上にbyte向けとtext向けのreader/writerを実装する
-* その上にmsgpack, json, yaml(?)のreader/writerを実装する
+* その上にmsgpack, jsonreader/writerを実装する
+* bvh, vpd, vmdのパーサ
+* x, mqo, obj, dxf, ply, pmd, pmxのパーサ
 * 外部依存無しで動くcore
 * boost::asioを使うrefrange_boost_asio 
 * boost::anyを使うrefrange_boost_any

@@ -1,10 +1,11 @@
 #pragma once
 #include "reader.h"
-#include "tree.h"
+#include "../tree.h"
 #include <memory>
 
 
 namespace refrange {
+namespace text {
 namespace bvh {
 
 
@@ -170,5 +171,6 @@ private:
     }
 };
 
+} // namespace
 } // namespace
 } // namespace

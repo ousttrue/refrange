@@ -1,4 +1,4 @@
-#include <refrange/bvh.h>
+#include <refrange/text/bvh.h>
 #include <gtest/gtest.h>
 
 
@@ -21,19 +21,19 @@ auto src=
 
 TEST(BvhTest, loader) 
 {
-    refrange::bvh::loader bvh;
+    refrange::text::bvh::loader bvh;
     EXPECT_TRUE(bvh.load(refrange::strrange(src)));
 
     // hierarchy
-	refrange::bvh::hierarchy hierarchy;
+	refrange::text::bvh::hierarchy hierarchy;
 
-	refrange::bvh::joint root{
+	refrange::text::bvh::joint root{
 		"root_name",
 		{ 0, 0, 0 }
 	};
 	hierarchy.value = root;
 
-	refrange::bvh::joint end_site{
+	refrange::text::bvh::joint end_site{
 		"Site",
 		{ 0, 10, 0 }
 	};

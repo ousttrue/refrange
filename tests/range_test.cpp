@@ -1,4 +1,4 @@
-#include <refrange/reader.h>
+#include <refrange/text/reader.h>
 #include <gtest/gtest.h>
 
 
@@ -30,7 +30,7 @@ TEST(RangeTest, text_reader)
 {
     auto buf=" 1 2 3";
     auto range=refrange::strrange(buf);
-    refrange::text_reader reader(range);
+    refrange::text::text_reader reader(range);
 
 
     EXPECT_EQ(1, reader.get_int());
