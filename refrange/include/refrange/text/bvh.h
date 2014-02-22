@@ -88,11 +88,11 @@ private:
         auto it=splited.begin();
         assert(it->to_str()=="OFFSET");
         ++it;
-        j.offset.x=it->to_int();
+        j.offset.x=it->to_float();
         ++it;
-        j.offset.y=it->to_int();
+		j.offset.y = it->to_float();
         ++it;
-        j.offset.z=it->to_int();
+		j.offset.z = it->to_float();
     }
 
     bool parse_joint(line_reader &reader, hierarchy *parent)

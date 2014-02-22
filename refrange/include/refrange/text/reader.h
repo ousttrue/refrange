@@ -15,7 +15,7 @@ public:
 
     int get_int()
     {
-        auto range=get_range().find_range_if(&is_int<type>, get_current());
+        auto range=get_range().find_range_if(&is_digit<type>, get_current());
         if(!range){
             throw std::exception(__FUNCTION__);
         }

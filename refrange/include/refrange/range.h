@@ -49,14 +49,40 @@ public:
     typename value_from_pointer<T>::type &operator[](size_t index){ return m_begin[index]; }
 
     std::string to_str()const{ return std::string(m_begin, m_end); }
-    int to_int(){ 
-        // todo: ltrim
+    int to_int()const
+    {
+        int factor =1;
         int n = 0;
         for (auto p = m_begin; p != m_end; ++p)
         { 
-            n = n * 10 + (*p-'0');
+            if(text::is_digit(p)){
+                n = n * 10 + (*p-'0');
+            }
+            else{
+                if(n==0){
+                    if(*p=='-'){
+                        factor=-1;
+                    }
+                    else{
+						break;
+                    }
+                }
+				else{
+					break;
+				}
+            }
         }
-        return n;
+		return n * factor;
+    }
+
+    double to_double()const
+    {
+        return atof((const char*)m_begin);
+    }
+
+    float to_float()const
+    {
+        return static_cast<float>(to_double());
     }
 
     bool operator==(const range<T> &s)const
