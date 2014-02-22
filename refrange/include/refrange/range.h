@@ -51,7 +51,7 @@ public:
     std::string to_str()const{ return std::string(m_begin, m_end); }
     int to_int()const
     {
-        int factor =1;
+        bool is_negative=false;
         int n = 0;
         for (auto p = m_begin; p != m_end; ++p)
         { 
@@ -61,7 +61,7 @@ public:
             else{
                 if(n==0){
                     if(*p=='-'){
-                        factor=-1;
+                        is_negative=true;
                     }
                     else{
 						break;
@@ -72,7 +72,7 @@ public:
 				}
             }
         }
-		return n * factor;
+		return is_negative ? -n : n;
     }
 
     double to_double()const

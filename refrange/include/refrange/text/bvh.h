@@ -40,16 +40,14 @@ struct joint
     std::string name;
     vec3 offset;
 
-    std::array<channel_t, 6> channels;
-    unsigned char channel_size;
+    std::vector<channel_t> channels;
 
     joint()
-        : channel_size(0)
     {
     }
 
     joint(const std::string &_name, const vec3 _o)
-        : name(_name), offset(_o), channel_size(0)
+        : name(_name), offset(_o)
     {}
 
     bool operator==(const joint &rhs)const
@@ -95,13 +93,46 @@ private:
 		j.offset.z = it->to_float();
     }
 
+    void assign_channel(joint &j, const immutable_range &r)
+    {
+        auto splited=r.split();
+        auto it=splited.begin();
+        assert(it->to_str()=="CHANNELS");
+        ++it;
+        auto channels=it->to_int();
+        for(int i=0; i<channels; ++i){
+            ++it;
+            if(*it=="Xposition"){
+                j.channels.push_back(channel_Xposition);
+            }
+            else if(*it=="Yposition"){
+                j.channels.push_back(channel_Yposition);
+            }
+            else if(*it=="Zposition"){
+                j.channels.push_back(channel_Zposition);
+            }
+            else if(*it=="Xrotation"){
+                j.channels.push_back(channel_Xrotation);
+            }
+            else if(*it=="Yrotation"){
+                j.channels.push_back(channel_Yrotation);
+            }
+            else if(*it=="Zrotation"){
+                j.channels.push_back(channel_Zrotation);
+            }
+            else{
+                throw std::exception(__FUNCTION__);
+            }
+        }
+    }
+
     bool parse_joint(line_reader &reader, hierarchy *parent)
     {
         auto offsets_line=reader.get_line().trim();
         assign_offset(parent->value, offsets_line);
 
         auto channels_line=reader.get_line().trim();
-        //assign_channel(parent->value, channels_line);
+        assign_channel(parent->value, channels_line);
 
         while(true)
         {

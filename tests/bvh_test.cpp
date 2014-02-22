@@ -76,7 +76,18 @@ TEST(BvhTest, loader)
 
 	hierarchy.children.back().children.push_back({ end_site });
 	EXPECT_EQ(hierarchy, bvh.get_hierarchy());
+
+    std::vector<refrange::text::bvh::channel_t> root_channels = {
+		refrange::text::bvh::channel_Xposition,
+		refrange::text::bvh::channel_Yposition,
+		refrange::text::bvh::channel_Zposition,
+		refrange::text::bvh::channel_Xrotation,
+		refrange::text::bvh::channel_Yrotation,
+		refrange::text::bvh::channel_Zrotation,
+	};
+    EXPECT_EQ(root_channels, bvh.get_hierarchy().value.channels);
 }
+
 
 TEST(BvhTest, load_from_file) 
 {
