@@ -3,6 +3,7 @@
 #include <sstream>
 #include <refrange/msgpack/utility.h>
 #include <refrange/msgpack/basic_overload.h>
+#include "text.h"
 
 
 namespace refrange {
@@ -43,20 +44,6 @@ namespace json {
         }
 
     private:
-        bool is_skip(char c)
-        {
-            switch(c)
-            {
-                case ' ':
-                case '\t':
-                case '\r':
-                case '\n':
-                    return true;
-            }
-
-            return false;
-        }
-
         char get_char(bool skip=false)
         {
             if(!skip){
@@ -74,7 +61,7 @@ namespace json {
                 return c;
             }
             else{
-                if(m_peek_char!=-1 && !is_skip(m_peek_char)){
+                if(m_peek_char!=-1 && !text::is_space(&m_peek_char)){
                     char c=m_peek_char;
                     m_peek_char=-1;
                     return c;
@@ -88,7 +75,7 @@ namespace json {
                     if(size==0){
                         throw std::exception("EOF");
                     }
-                    if(!is_skip(c)){
+                    if(!text::is_space(&c)){
                         return c;
                     }
                 }
@@ -105,7 +92,7 @@ namespace json {
                 return m_peek_char;
             }
 
-            if(m_peek_char!=-1 && !is_skip(m_peek_char)){
+            if(m_peek_char!=-1 && !text::is_space(&m_peek_char)){
                 return m_peek_char;
             }
 
@@ -159,32 +146,12 @@ namespace json {
             return false;
         }
 
-		bool is_digit(char c)
-        {
-            switch (c)
-            {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    return true;
-            }
-
-            return false;
-        }
-
 		bool is_non_numeric(char c)
 		{
-			if (is_skip(c)){
+			if (text::is_space(&c)){
 				return true;
 			}
-			if (is_digit(c)){
+			if (text::is_digit(&c)){
 				return false;
 			}
 
