@@ -39,53 +39,55 @@ TEST(BvhTest, loader)
     ASSERT_TRUE(bvh.load(refrange::strrange(src)));
 
     // hierarchy
-	refrange::text::bvh::hierarchy hierarchy;
+	std::vector<refrange::text::bvh::joint> joints{
+		{
+			"root_name"
+			, { 0, 0, 0 }
+			, {
+				refrange::text::bvh::channel_Xposition
+				, refrange::text::bvh::channel_Yposition
+				, refrange::text::bvh::channel_Zposition
+				, refrange::text::bvh::channel_Xrotation
+				, refrange::text::bvh::channel_Yrotation
+				, refrange::text::bvh::channel_Zrotation
+			}
+		}
+		, { 
+			"joint1"
+			, { 0, 0, 0 }
+			, {
+				refrange::text::bvh::channel_Xrotation
+				, refrange::text::bvh::channel_Yrotation
+				, refrange::text::bvh::channel_Zrotation
+			}
+			, {
+				{ 0, 10, 0 }
+			}
+		}
+		, {
+			"joint2"
+			, { 0, 0, 0 }
+			, {
+				refrange::text::bvh::channel_Xrotation
+				, refrange::text::bvh::channel_Yrotation
+				, refrange::text::bvh::channel_Zrotation
+			}
+            , {
+                { 0, 10, 0 }
+            }
+		}
+	};
 
-	refrange::text::bvh::joint root(
-		"root_name",
-		{ 0, 0, 0 }
-	);
-	hierarchy.value = root;
+	refrange::text::bvh::hierarchy hierarchy{ 0 };
 
 	// j1
-	refrange::text::bvh::joint j1(
-		"joint1",
-		{ 0, 0, 0 }
-	);
-	hierarchy.children.push_back({ j1 });
-
-	refrange::text::bvh::joint end_site{
-		"",
-		{ 0, 10, 0 }
-	};
-	hierarchy.children.back().children.push_back({ end_site });
-
+	hierarchy.children.push_back({1});
 	// j2
-	refrange::text::bvh::joint j2{
-		"joint2",
-		{ 0, 0, 0 }
-	};
-	hierarchy.children.push_back({ j2 });
+	hierarchy.children.push_back({2});
 
-	/*
-	refrange::text::bvh::joint end_site{
-		"",
-		{ 0, 10, 0 }
-	};
-	*/
-
-	hierarchy.children.back().children.push_back({ end_site });
 	EXPECT_EQ(hierarchy, bvh.get_hierarchy());
 
-    std::vector<refrange::text::bvh::channel_t> root_channels = {
-		refrange::text::bvh::channel_Xposition,
-		refrange::text::bvh::channel_Yposition,
-		refrange::text::bvh::channel_Zposition,
-		refrange::text::bvh::channel_Xrotation,
-		refrange::text::bvh::channel_Yrotation,
-		refrange::text::bvh::channel_Zrotation,
-	};
-    EXPECT_EQ(root_channels, bvh.get_hierarchy().value.channels);
+    EXPECT_EQ(joints, bvh.get_joints());
 }
 
 
@@ -97,7 +99,18 @@ TEST(BvhTest, load_from_file)
 	refrange::text::bvh::loader bvh;
     EXPECT_TRUE(bvh.load(refrange::vectorrange(buf)));
 
-    refrange::text::bvh::joint root{"Hips", {0, 0, 0}};
-    EXPECT_EQ(root, bvh.get_hierarchy().value);
+    refrange::text::bvh::joint root{
+		"Hips"
+		, {0, 0, 0}
+		, {
+			refrange::text::bvh::channel_Xposition
+			, refrange::text::bvh::channel_Yposition
+			, refrange::text::bvh::channel_Zposition
+			, refrange::text::bvh::channel_Zrotation
+			, refrange::text::bvh::channel_Yrotation
+			, refrange::text::bvh::channel_Xrotation
+		}
+	};
+    EXPECT_EQ(root, bvh.get_joints().front());
 }
 
