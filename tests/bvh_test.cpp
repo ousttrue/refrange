@@ -30,7 +30,7 @@ auto src=
 "MOTION\n"
 "Frames: 1\n"
 "Frame Time: 0.033\n"
-"0 0 0 0 0 0\n"
+"0 0 0 0 0 0 0 0 0 0 0 0\n"
 ;
 
 TEST(BvhTest, loader) 
@@ -88,6 +88,8 @@ TEST(BvhTest, loader)
 	EXPECT_EQ(hierarchy, bvh.get_hierarchy());
 
     EXPECT_EQ(joints, bvh.get_joints());
+
+	EXPECT_EQ(bvh.get_channel_count(), bvh.get_frames().front().values.size());
 }
 
 
@@ -112,5 +114,7 @@ TEST(BvhTest, load_from_file)
 		}
 	};
     EXPECT_EQ(root, bvh.get_joints().front());
+
+	EXPECT_EQ(bvh.get_channel_count(), bvh.get_frames().front().values.size());
 }
 

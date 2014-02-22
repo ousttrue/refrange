@@ -65,16 +65,31 @@ struct joint
 };
 
 
+struct frame
+{
+    std::vector<float> values;
+};
+
+
 typedef node<size_t> hierarchy;
 
 class loader
 {
     std::vector<joint> m_joints;
     hierarchy m_hierarchy;
+    std::vector<frame> m_frames;
 
 public:
     std::vector<joint> &get_joints(){ return m_joints; }
     hierarchy &get_hierarchy(){ return m_hierarchy; }
+    std::vector<frame> &get_frames(){ return m_frames; }
+    size_t get_channel_count()const{
+        size_t channels=0;
+        for(auto it=m_joints.begin(); it!=m_joints.end(); ++it){
+            channels+=it->channels.size();
+        }
+        return channels;
+    }
 
     bool load(const immutable_range &r)
     {
@@ -250,8 +265,21 @@ private:
                 return false;
             }
         }
+
+		auto channels = 0;
+		for (auto it = m_joints.begin(); it != m_joints.end(); ++it){
+			channels += it->channels.size();
+		}
+
+        m_frames.resize(frames);
         for(size_t i=0; i<frames; ++i){
-            auto line=reader.get_line();
+            auto &frame=m_frames[i];
+            auto splited=reader.get_line().split();
+			//assert(splited.size() == channels);
+			for (auto it = splited.begin(); it != splited.end(); ++it)
+            {
+                frame.values.push_back(it->to_float());
+            }
         }
         return true;
     }
