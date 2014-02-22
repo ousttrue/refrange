@@ -56,7 +56,15 @@ public:
     {
         auto begin=get_current();
         auto end=find('\n');
-        increment();
+		if (get_current() < get_range().end()){
+			increment();
+		}
+        if(end!=get_range().begin()){
+            if(end[-1]=='\r'){
+                // CR
+                --end;
+            }
+        }
         return immutable_range(begin, end);
     }
 };

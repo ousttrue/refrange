@@ -4,11 +4,11 @@
 
 namespace refrange {
 
-template<typename T, typename Container=std::list<T>>
+template<typename T>
     struct node
     {
         T value;
-        Container children;
+		std::list<node<T>> children;
 
         bool operator==(const node<T> &rhs)const
         {

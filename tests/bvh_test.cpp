@@ -8,9 +8,23 @@ auto src=
 "{\n"
 "  OFFSET 0 0 0\n"
 "  CHANNELS 6 Xposition Yposition Zposition Xrotation Yrotation Zrotation\n"
-"  End Site\n"
+"  JOINT joint1\n"
 "  {\n"
-"    OFFSET 0 10 0\n"
+"    OFFSET 0 0 0\n"
+"    CHANNELS 3 Xrotation Yrotation Zrotation\n"
+"    End Site\n"
+"    {\n"
+"      OFFSET 0 10 0\n"
+"    }\n"
+"  }\n"
+"  JOINT joint2\n"
+"  {\n"
+"    OFFSET 0 0 0\n"
+"    CHANNELS 3 Xrotation Yrotation Zrotation\n"
+"    End Site\n"
+"    {\n"
+"      OFFSET 0 10 0\n"
+"    }\n"
 "  }\n"
 "}\n"
 "MOTION\n"
@@ -22,7 +36,7 @@ auto src=
 TEST(BvhTest, loader) 
 {
     refrange::text::bvh::loader bvh;
-    EXPECT_TRUE(bvh.load(refrange::strrange(src)));
+    ASSERT_TRUE(bvh.load(refrange::strrange(src)));
 
     // hierarchy
 	refrange::text::bvh::hierarchy hierarchy;
@@ -33,13 +47,35 @@ TEST(BvhTest, loader)
 	};
 	hierarchy.value = root;
 
+	// j1
+	refrange::text::bvh::joint j1{
+		"joint1",
+		{ 0, 0, 0 }
+	};
+	hierarchy.children.push_back({ j1 });
+
 	refrange::text::bvh::joint end_site{
 		"",
 		{ 0, 10, 0 }
 	};
-	hierarchy.children.push_back({end_site});
+	hierarchy.children.back().children.push_back({ end_site });
 
-    EXPECT_EQ(hierarchy, bvh.get_hierarchy());
+	// j2
+	refrange::text::bvh::joint j2{
+		"joint2",
+		{ 0, 0, 0 }
+	};
+	hierarchy.children.push_back({ j2 });
+
+	/*
+	refrange::text::bvh::joint end_site{
+		"",
+		{ 0, 10, 0 }
+	};
+	*/
+
+	hierarchy.children.back().children.push_back({ end_site });
+	EXPECT_EQ(hierarchy, bvh.get_hierarchy());
 }
 
 TEST(BvhTest, load_from_file) 
@@ -50,21 +86,7 @@ TEST(BvhTest, load_from_file)
 	refrange::text::bvh::loader bvh;
     EXPECT_TRUE(bvh.load(refrange::vectorrange(buf)));
 
-    // hierarchy
-	refrange::text::bvh::hierarchy hierarchy;
-
-	refrange::text::bvh::joint root{
-		"root_name",
-		{ 0, 0, 0 }
-	};
-	hierarchy.value = root;
-
-	refrange::text::bvh::joint end_site{
-		"",
-		{ 0, 10, 0 }
-	};
-	hierarchy.children.push_back({end_site});
-
-    EXPECT_EQ(hierarchy, bvh.get_hierarchy());
+    refrange::text::bvh::joint root{"Hips", {0, 0, 0}};
+    EXPECT_EQ(root, bvh.get_hierarchy().value);
 }
 

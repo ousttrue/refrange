@@ -130,6 +130,16 @@ public:
         return (*t == ' ');
     }
 
+    std::list<range<T>> split(char c)
+    {
+        auto delimiter=[c](T t)
+        {
+            return *t==c;
+        };
+
+        return split(delimiter);
+    }
+
     std::list<range<T>> split(std::function<bool(T)> delimiter=&is_space)
     {
         std::list<range<T>> splited;

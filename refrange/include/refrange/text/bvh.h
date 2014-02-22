@@ -56,82 +56,73 @@ public:
     }
 
 private:
-    bool parse_hierarchy_node(line_reader &reader, hierarchy &parent)
+    bool parse_joint(line_reader &reader, hierarchy *parent)
     {
-		auto line = reader.get_line();
-        auto tokens=line.split();
-        if (tokens.empty()){
-            return false;
+        {
+            auto offsets_line=reader.get_line().trim();
+            auto splited=offsets_line.split();
+            auto it=splited.begin();
+            assert(it->to_str()=="OFFSET");
+            ++it;
+            parent->value.offset.x=it->to_int();
+            ++it;
+            parent->value.offset.y=it->to_int();
+            ++it;
+            parent->value.offset.z=it->to_int();
         }
 
-        auto it=tokens.begin();
-        if(it==tokens.end()){
-            return false;
-        }
-		auto key = *it;
-		++it;
-        if(key=="ROOT"){
-            // root
-            auto &root=m_hierarchy.value;
-            root.name=it->to_str();
+        auto channels_line=reader.get_line().trim();
 
-            if(reader.get_line().trim()!="{"){
-                return false;
+        while(true)
+        {
+            auto root_line=reader.get_line().trim();
+            if(root_line=="}"){
+                // close
+                break;
             }
 
-			auto offsets = reader.get_line().split();
-			{
-				auto it = offsets.begin();
-				if (*it != "OFFSET"){
-					return false;
-				}
-				++it;
-				root.offset.x = it->to_int();
-				++it;
-				root.offset.y = it->to_int();
-				++it;
-				root.offset.z = it->to_int();
-			}
+            auto splited=root_line.split();
+            auto it=splited.begin();
+            auto key=it->to_str();
+            if(key=="JOINT"){
+                parent->children.push_back(hierarchy());
+                ++it;
+                parent->children.back().value.name=it->to_str();
 
-            auto channels=reader.get_line().split();
+                auto open_line=reader.get_line().trim();
+                assert(open_line=="{");
 
-            // nest
-			if (!parse_hierarchy_node(reader, m_hierarchy)){
-				return false;
-			}
+				parse_joint(reader, &parent->children.back());
+            }
+            else if(key=="End"){
+                parent->children.push_back(hierarchy());
 
-			return reader.get_line().trim() == "}";
+                auto open_line=reader.get_line().trim();
+                assert(open_line=="{");
+
+                {
+                    auto offsets_line=reader.get_line().trim();
+                    auto splited=offsets_line.split();
+                    auto it=splited.begin();
+                    assert(it->to_str()=="OFFSET");
+                    ++it;
+                    parent->children.back().value.offset.x=it->to_int();
+                    ++it;
+                    parent->children.back().value.offset.y=it->to_int();
+                    ++it;
+                    parent->children.back().value.offset.z=it->to_int();
+                }
+
+                auto close_line=reader.get_line().trim();
+                assert(close_line=="}");
+            }
+            else{
+                assert(false);
+                return false;
+            }
         }
-		else if (key == "End"){
-			if (reader.get_line().trim() != "{"){
-				return false;
-			}
 
-			joint end;
-			//end.name = it->to_str();
-
-			auto offsets = reader.get_line().split();
-			{
-				auto it = offsets.begin();
-				if (*it != "OFFSET"){
-					return false;
-				}
-				++it;
-				end.offset.x = it->to_int();
-				++it;
-				end.offset.y = it->to_int();
-				++it;
-				end.offset.z = it->to_int();
-			}
-
-			parent.children.push_back({ end });
-
-            return reader.get_line().trim()=="}";
-        }
-        else{
-            // unknown
-            return false;
-        }
+        return true;
     }
 
     bool parse_hierarchy(line_reader &reader)
@@ -140,7 +131,12 @@ private:
         if(line!="HIERARCHY"){
             return false;
         }
-        if(!parse_hierarchy_node(reader, m_hierarchy)){
+        auto root_line=reader.get_line().trim().split();
+        m_hierarchy.value.name=root_line.begin()->to_str();
+
+        auto open_line=reader.get_line().trim();
+        assert(open_line=="{");
+        if(!parse_joint(reader, &m_hierarchy)){
             return false;
         }
         return true;
@@ -154,10 +150,13 @@ private:
         size_t frames=0;
         {
             auto line=reader.get_line();
-            if(!line.startswith("Frames:")){
+			auto splited = line.split(':');
+			auto it = splited.begin();
+            if(*it!="Frames"){
                 return false;
             }
-            frames=(size_t)atoi((char*)&line[7]);
+			++it;
+            frames=it->trim().to_int();
         }
         {
             auto line=reader.get_line();
