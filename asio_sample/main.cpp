@@ -1,4 +1,4 @@
-#include <mpack.h>
+#include <refrange/msgpack/rpc/dispatcher.h>
 #include <boost/asio.hpp>
 #include <memory>
 #include <iostream>
@@ -11,7 +11,7 @@ class rpc_connection
     boost::asio::ip::tcp::socket m_socket;
     unsigned char m_read_buffer[1024];
     std::vector<unsigned char> m_unpack_buffer;
-    std::shared_ptr<mpack::msgpack::rpc::dispatcher> m_dispatcher;
+    std::shared_ptr<refrange::msgpack::rpc::dispatcher> m_dispatcher;
 
     int m_request_id;
     struct Message
@@ -28,7 +28,7 @@ class rpc_connection
 
 public:
     rpc_connection(const std::string &name, boost::asio::io_service &io_service, 
-            std::shared_ptr<mpack::msgpack::rpc::dispatcher> d=0)
+            std::shared_ptr<refrange::msgpack::rpc::dispatcher> d=0)
         : m_name(name), m_socket(io_service), m_dispatcher(d), m_request_id(0)
     {
     }
@@ -71,14 +71,14 @@ public:
 
             std::copy(self->m_read_buffer, self->m_read_buffer+bytes_transferred, std::back_inserter(self->m_unpack_buffer));
             if(!self->m_unpack_buffer.empty()){
-                auto unpacker=mpack::msgpack::create_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
+                auto unpacker=refrange::msgpack::create_unpacker(&self->m_unpack_buffer[0], self->m_unpack_buffer.size());
                 while(!unpacker.range().is_end())
                 {
                     try {
 						auto u=unpacker;
 
 						assert(u.is_array());
-						auto c=mpack::msgpack::array();
+						auto c=refrange::msgpack::array();
 						u >> c;
 						assert(c.size==4);
 						
@@ -93,13 +93,13 @@ public:
 								int id;
 								u >> id;
 
-								mpack::msgpack::byte_range r;
+								refrange::immutable_range r;
 								unpacker >> r;
 
 								// call
 								std::vector<unsigned char> response_message;
-								auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
-								self->m_dispatcher->dispatch(response_packer, mpack::msgpack::unpacker(r.begin(), r.end()));
+								auto response_packer=refrange::msgpack::create_external_vector_packer(response_message);
+								self->m_dispatcher->dispatch(response_packer, refrange::msgpack::unpacker(r.begin(), r.end()));
 
 								// send response
 								self->request(id, response_packer.pointer(), response_packer.size());
@@ -112,7 +112,7 @@ public:
 								int id;
 								u >> id;
 
-								mpack::msgpack::byte_range r;
+								refrange::immutable_range r;
 								unpacker >> r;
 
 								// fire response event
@@ -165,13 +165,13 @@ public:
 		m_socket.async_send(boost::asio::buffer(p, len), handle_write);
     }
 
-    void request(const std::string &method, mpack::msgpack::packer &args_packer)
+    void request(const std::string &method, refrange::msgpack::packer &args_packer)
     {
 		int id=++m_request_id;
 
 		std::vector<unsigned char> buf;
-        auto request_packer=mpack::msgpack::create_external_vector_packer(buf);
-        mpack::msgpack::rpc::pack_request(request_packer, id, method, args_packer);
+        auto request_packer=refrange::msgpack::create_external_vector_packer(buf);
+        refrange::msgpack::rpc::pack_request(request_packer, id, method, args_packer);
 
 		if(buf.empty()){
 			return;
@@ -201,10 +201,10 @@ static int add(int a, int b)
 
 int main(int argc, char **argv)
 {
-    auto d=std::make_shared<mpack::msgpack::rpc::dispatcher>();
+    auto d=std::make_shared<refrange::msgpack::rpc::dispatcher>();
 
     // regsiter functions
-    auto method=mpack::msgpack::rpc::packmethod(add);
+    auto method=refrange::msgpack::rpc::packmethod(add);
     d->register_method("add", method);
 
     // listen server
@@ -230,25 +230,25 @@ int main(int argc, char **argv)
     rpc_connection client("client", io_service);
     client.begin_connect("127.0.0.1", port);
 
-    client.request("add", mpack::msgpack::create_vector_packer() << 1 << 2);
+    client.request("add", refrange::msgpack::create_vector_packer() << 1 << 2);
 
 
     /*
     //////////////////////////////////////////////////////////////////////
     // call
     std::vector<unsigned char> response_message;
-    auto response_packer=mpack::msgpack::create_external_vector_packer(response_message);
+    auto response_packer=refrange::msgpack::create_external_vector_packer(response_message);
     d.dispatch(response_packer, request_packer.pointer(), request_packer.size());
     //////////////////////////////////////////////////////////////////////
 
     // unpack result
-    auto response_unpacker=mpack::msgpack::create_unpacker(
+    auto response_unpacker=refrange::msgpack::create_unpacker(
             response_packer.pointer(), response_packer.size());
 
     // [type(int)=1, msgid(int), error(nil or not), result(any)]
     ASSERT_TRUE(response_unpacker.is_array());
 
-    auto array=mpack::msgpack::array();
+    auto array=refrange::msgpack::array();
     response_unpacker >> array;
     ASSERT_EQ(4, array.size);
 
