@@ -37,7 +37,7 @@ public:
     unsigned char read_byte()
     {
         unsigned char c;
-        read_value<unsigned char>(&c);
+        read_value(c);
         return c;
     }
 
@@ -51,6 +51,11 @@ public:
         return r;
     } 
 
+    void skip(size_t bytes)
+    {
+        read_range(bytes);
+    }
+
     std::string read_str(size_t bytes)
     {
         auto r=read_range(bytes);
@@ -60,15 +65,7 @@ public:
     template<typename T>
         void read_value(T &t)
         {
-            read_value<T>(&t);
-        }
-
-    template<typename T, typename W>
-        void read_value(W *w)
-        {
-            T n;
-            size_t size=read((unsigned char*)&n, sizeof(T));
-            *w=n;
+			size_t size = read((unsigned char*)&t, sizeof(T));
         }
 
     size_t remain_size()
