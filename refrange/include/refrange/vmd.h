@@ -33,6 +33,11 @@ struct frame
     vec3 pos;
     quaternion rot;
     char interpolate[64];
+
+    bool operator<(const frame &rhs)const
+    {
+        return framenum<rhs.framenum;
+    }
 };
 
 

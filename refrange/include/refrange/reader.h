@@ -88,7 +88,9 @@ public:
             throw std::range_error(__FUNCTION__);
         }
 
-        std::copy(m_current, m_current+len, p);
+        //std::copy(m_current, m_current+len, p);
+		memcpy(p, m_current, len);
+
         m_current+=len;
         return len;
     }
