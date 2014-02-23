@@ -1,4 +1,8 @@
 #pragma once
+#include "reader.h"
+#include <string>
+#include <vector>
+#include <algorithm>
 
 
 namespace refrange {
