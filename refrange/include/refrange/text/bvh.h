@@ -73,6 +73,7 @@ struct frame
 
 typedef node<size_t> hierarchy;
 
+
 class loader
 {
     std::vector<joint> m_joints;

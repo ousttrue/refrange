@@ -48,7 +48,16 @@ public:
 
     typename value_from_pointer<T>::type &operator[](size_t index){ return m_begin[index]; }
 
-    std::string to_str()const{ return std::string(m_begin, m_end); }
+    std::string to_str()const{ 
+        auto end=m_begin;
+        for(; end!=m_end; ++end){
+            if(*end=='0'){
+                break;
+            }
+        }
+        return std::string(m_begin, end); 
+    }
+
     int to_int()const
     {
         bool is_negative=false;

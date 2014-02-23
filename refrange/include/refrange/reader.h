@@ -41,13 +41,27 @@ public:
         return c;
     }
 
-    void skip(size_t s)
+    immutable_range read_range(size_t bytes)
     {
-        if(m_current+s>m_range.end()){
+        if(m_current+bytes>m_range.end()){
             throw std::range_error(__FUNCTION__);
         }
-        m_current+=s;
+        immutable_range r(m_current, m_current+bytes);
+        m_current+=bytes;
+        return r;
     } 
+
+    std::string read_str(size_t bytes)
+    {
+        auto r=read_range(bytes);
+        return r.to_str();
+    }
+
+    template<typename T>
+        void read_value(T &t)
+        {
+            read_value<T>(&t);
+        }
 
     template<typename T, typename W>
         void read_value(W *w)
