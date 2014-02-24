@@ -1,4 +1,5 @@
 #pragma once
+#include "../writer.h"
 #include "../msgpack.h"
 
 namespace refrange {

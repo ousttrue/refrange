@@ -1,11 +1,12 @@
 #pragma once
-#include "reader.h"
+#include "../reader.h"
 #include <string>
 #include <vector>
 #include <algorithm>
 
 
 namespace refrange {
+namespace binary {
 namespace vmd {
 
 
@@ -109,6 +110,7 @@ public:
     }
 };
 
+} // namespace
 } // namespace
 } // namespace
 

@@ -1,5 +1,5 @@
 #include <refrange/text/bvh.h>
-#include <refrange/vmd.h>
+#include <refrange/binary/vmd.h>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -29,7 +29,7 @@ public:
 		}
 
 		{
-			refrange::vmd::loader l;
+			refrange::binary::vmd::loader l;
 			if (l.load(refrange::vectorrange(buf))){
                 m_status << "loaded: " << path << std::endl;
 				return true;
