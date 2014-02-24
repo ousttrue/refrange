@@ -1,5 +1,6 @@
 #pragma once
 #include <ctype.h>
+#include "range.h"
 
 
 namespace refrange {
@@ -18,6 +19,7 @@ inline bool is_digit(T p)
 {
     return isdigit(*p) != 0;
 }
+
 
 
 } // namespace

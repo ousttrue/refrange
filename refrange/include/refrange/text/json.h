@@ -3,10 +3,11 @@
 #include <sstream>
 #include <refrange/msgpack/utility.h>
 #include <refrange/msgpack/basic_overload.h>
-#include "text.h"
+#include "../text.h"
 
 
 namespace refrange {
+namespace text {
 namespace json {
 
     typedef std::function<size_t(unsigned char *, size_t)> reader_t;
@@ -270,5 +271,6 @@ namespace json {
         }
     };
 
+} // namespace
 } // namespace
 } // namespace

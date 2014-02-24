@@ -12,6 +12,15 @@ Msgpackを自分用に再実装したりする。
 * シンプル実装を心がける
 * Test Driven
 
+Text処理
+--------
+
+Loader
+------
+
+MsgPack
+-------
+
 ToDo
 ----
 * refrange::rangeの上にbyte向けとtext向けのreader/writerを実装する
@@ -25,3 +34,4 @@ ToDo
 * unpacker エラー型(eof, 数値代入時のoverflow, underflow, 桁落ち)
 * sequence型api整理
 * 後で[msgpack-rpc-asio](https://github.com/ousttrue/msgpack-rpc-asio)のバックエンドにする
+
