@@ -1,5 +1,5 @@
 #pragma once
-#include "reader.h"
+#include "text_reader.h"
 #include "../tree.h"
 #include <memory>
 #include <array>
@@ -170,15 +170,15 @@ private:
 
     bool parse_joint(line_reader &reader, hierarchy *parent)
     {
-        auto offsets_line=reader.get_line().trim();
+        auto offsets_line=reader.get_line().ltrim();
         assign_offset(m_joints[parent->value], offsets_line);
 
-        auto channels_line=reader.get_line().trim();
+        auto channels_line=reader.get_line().ltrim();
         assign_channel(m_joints[parent->value], channels_line);
 
         while(true)
         {
-            auto root_line=reader.get_line().trim();
+            auto root_line=reader.get_line().ltrim();
             if(root_line=="}"){
                 // close
                 break;
@@ -195,7 +195,7 @@ private:
                 ++it;
                 pJoint->name=it->to_str();
 
-                auto open_line=reader.get_line().trim();
+                auto open_line=reader.get_line().ltrim();
                 assert(open_line=="{");
 
 				parent->children.push_back(hierarchy{ index });
@@ -204,13 +204,13 @@ private:
             else if(key=="End"){
 				size_t index = m_joints.size();
 
-                auto open_line=reader.get_line().trim();
+                auto open_line=reader.get_line().ltrim();
                 assert(open_line=="{");
 
-                auto offsets_line=reader.get_line().trim();
+                auto offsets_line=reader.get_line().ltrim();
                 assign_endsite(m_joints[parent->value], offsets_line);
 
-                auto close_line=reader.get_line().trim();
+                auto close_line=reader.get_line().ltrim();
                 assert(close_line=="}");
             }
             else{
@@ -232,10 +232,13 @@ private:
 		m_joints.push_back({});
 		m_hierarchy.value = 0;
 
-        auto root_line=reader.get_line().trim().split();
-        m_joints[0].name=root_line.begin()->to_str();
+        auto root_line=reader.get_line().ltrim().split();
+		auto it = root_line.begin();
+		assert(*it == "ROOT");
+		++it;
+        m_joints[0].name=it->to_str();
 
-        auto open_line=reader.get_line().trim();
+        auto open_line=reader.get_line().ltrim();
         assert(open_line=="{");
         if(!parse_joint(reader, &m_hierarchy)){
             return false;
@@ -258,7 +261,7 @@ private:
                 return false;
             }
 			++it;
-            frames=it->trim().to_int();
+            frames=it->ltrim().to_int();
         }
         {
             auto line=reader.get_line();

@@ -95,8 +95,8 @@ TEST(BvhTest, loader)
 
 TEST(BvhTest, load_from_file) 
 {
-    //auto path="../../samples/sample.bvh";
-	auto path = "../../samples/kinect_sample.bvh";
+    auto path="../../samples/sample.bvh";
+	//auto path = "../../samples/kinect_sample.bvh";
 	auto buf = refrange::readfile(path);
 
 	refrange::text::bvh::loader bvh;

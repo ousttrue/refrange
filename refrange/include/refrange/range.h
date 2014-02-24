@@ -4,6 +4,7 @@
 #include <functional>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 #include <assert.h>
 #include "text.h"
 
@@ -138,6 +139,24 @@ public:
         return r==s.end();
     }
 
+    T find(T p)const
+    {
+        for(auto it=m_begin; it!=m_end; ++it){
+            bool is_match=true;
+            auto k=p;
+            for(auto j=it; j!=m_end && *p!='\0'; ++j, ++k){
+                if(*j!=*k){
+                    is_match=false;
+                    break;
+                }
+            }
+            if(is_match){
+                return it;
+            }
+        }
+        return m_end;
+    }
+
 	range<T> find_range_if(const pred &func)const
 	{
 		return find_range_if(func, m_begin);
@@ -199,22 +218,14 @@ public:
         return splited;
     }
 
-    range<T> &ltrim()
+    range<T> ltrim()const
     {
         auto range=find_range_if(&text::is_space<T>);
-        if(range){
-            m_begin=range.end();
+        auto begin=m_begin;
+        if(range && range.begin()==m_begin){
+            begin=range.end();
         }
-
-        return *this;
-    }
-
-    range<T> &trim()
-    {
-        ltrim();
-		// rtrim();
-
-        return *this;
+        return immutable_range(begin, m_end);
     }
 };
 typedef range<const unsigned char*> immutable_range;

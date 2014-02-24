@@ -1,4 +1,4 @@
-#include <refrange/text/reader.h>
+#include <refrange/text/text_reader.h>
 #include <gtest/gtest.h>
 
 
@@ -26,6 +26,27 @@ TEST(RangeTest, range)
 		found);
 }
 
+TEST(RangeTest, trim) 
+{
+    auto buf=
+        "1\r\n"
+        "\r\n"
+        "  2\r\n"
+		" 3\n"
+        ;
+
+    auto range=refrange::strrange(buf);
+    refrange::text::line_reader reader(range);
+
+	EXPECT_EQ(refrange::strrange("1"), reader.get_line());
+	{
+		auto line = reader.get_line();
+		auto expected = refrange::strrange("  2");
+		EXPECT_EQ(expected, line);
+	}
+	EXPECT_EQ(refrange::strrange("3"), reader.get_line().ltrim());
+}
+
 TEST(RangeTest, text_reader) 
 {
     auto buf=" 1 2 3";
@@ -37,3 +58,15 @@ TEST(RangeTest, text_reader)
     EXPECT_EQ(2, reader.get_int());
     EXPECT_EQ(3, reader.get_int());
 }
+
+
+TEST(TextTest, text) 
+{
+    EXPECT_TRUE(refrange::text::is_space(" "));
+
+    EXPECT_EQ(1, refrange::strrange("1").to_int());
+    EXPECT_EQ(-1, refrange::strrange("-1").to_int());
+
+    EXPECT_EQ(1.5, refrange::strrange("1.5").to_double());
+}
+
