@@ -44,6 +44,7 @@ public:
 
     T begin()const{ return m_begin; }
     T end()const{ return m_end; }
+    size_t size()const{ return m_end-m_begin; }
 
     operator bool()const{ return m_begin<m_end; }
 
@@ -259,7 +260,7 @@ inline immutable_range vectorrange(const std::vector<unsigned char> &v)
         return emptyrange();
     }
 
-    return immutable_range(&v.front(), &v.back());
+    return immutable_range(&v[0], &v[0]+v.size());
 }
 
 
