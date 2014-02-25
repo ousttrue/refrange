@@ -68,7 +68,7 @@ public:
             // translation
             {
                 auto line=reader.get_line();
-                auto splited=line.split();
+                auto splited=line.split(',');
                 auto it=splited.begin();
                 bone.translation.x=it->to_float();
                 ++it;
@@ -80,7 +80,7 @@ public:
             // rotation
             {
                 auto line=reader.get_line();
-                auto splited=line.split();
+                auto splited=line.split(',');
                 auto it=splited.begin();
                 bone.rotation.x=it->to_float();
                 ++it;
