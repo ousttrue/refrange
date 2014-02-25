@@ -121,7 +121,7 @@ private:
 
     void assign_endsite(joint &j, const immutable_range &r)
     {
-		j.ends.push_back({});
+		j.ends.push_back(vec3());
         auto &end=j.ends.back();
 
         auto splited=r.split();
@@ -198,7 +198,8 @@ private:
                 auto open_line=reader.get_line().ltrim();
                 assert(open_line=="{");
 
-				parent->children.push_back(hierarchy{ index });
+				parent->children.push_back(hierarchy());
+				parent->children.back().value=index;
 				parse_joint(reader, &parent->children.back());
             }
             else if(key=="End"){
@@ -229,7 +230,7 @@ private:
             return false;
         }
 
-		m_joints.push_back({});
+		m_joints.push_back(joint());
 		m_hierarchy.value = 0;
 
         auto root_line=reader.get_line().ltrim().split();
