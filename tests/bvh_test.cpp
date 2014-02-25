@@ -39,6 +39,8 @@ TEST(BvhTest, loader)
     ASSERT_TRUE(bvh.load(refrange::strrange(src)));
 
     // hierarchy
+#if _MSC_VER >= 1800
+    // vc2013
 	std::vector<refrange::text::bvh::joint> joints{
 		{
 			"root_name"
@@ -77,13 +79,33 @@ TEST(BvhTest, loader)
             }
 		}
 	};
+#else
+    std::vector<refrange::text::bvh::joint> joints;
+    {
+        joints.push_back(refrange::text::bvh::joint());
+        auto &joint=joints.back();
+        joint.name="root_name";
+        joint.offset.x=0;
+        joint.offset.y=0;
+        joint.offset.z=0;
+        joint.channels.push_back(refrange::text::bvh::channel_Xposition);
+        joint.channels.push_back(refrange::text::bvh::channel_Yposition);
+        joint.channels.push_back(refrange::text::bvh::channel_Zposition);
+        joint.channels.push_back(refrange::text::bvh::channel_Xrotation);
+        joint.channels.push_back(refrange::text::bvh::channel_Yrotation);
+        joint.channels.push_back(refrange::text::bvh::channel_Zrotation);
+    }
+#endif
 
-	refrange::text::bvh::hierarchy hierarchy{ 0 };
+	refrange::text::bvh::hierarchy hierarchy;
+    hierarchy.value=0;
 
 	// j1
-	hierarchy.children.push_back({1});
+	hierarchy.children.push_back(refrange::text::bvh::hierarchy());
+    hierarchy.children.back().value=1;
 	// j2
-	hierarchy.children.push_back({2});
+	hierarchy.children.push_back(refrange::text::bvh::hierarchy());
+    hierarchy.children.back().value=2;
 
 	EXPECT_EQ(hierarchy, bvh.get_hierarchy());
 
@@ -98,10 +120,12 @@ TEST(BvhTest, load_from_file)
     auto path="../../samples/sample.bvh";
 	//auto path = "../../samples/kinect_sample.bvh";
 	auto buf = refrange::readfile(path);
+	ASSERT_FALSE(buf.empty());
 
 	refrange::text::bvh::loader bvh;
-    EXPECT_TRUE(bvh.load(refrange::vectorrange(buf)));
+    ASSERT_TRUE(bvh.load(refrange::vectorrange(buf)));
 
+#if _MSC_VER >= 1800
     refrange::text::bvh::joint root{
 		"Hips"
 		, {0, 0, 0}
@@ -114,8 +138,23 @@ TEST(BvhTest, load_from_file)
 			, refrange::text::bvh::channel_Xrotation
 		}
 	};
-    EXPECT_EQ(root, bvh.get_joints().front());
+#else
+    refrange::text::bvh::joint root;
+    {
+        root.name="root_name";
+        root.offset.x=0;
+        root.offset.y=0;
+        root.offset.z=0;
+        root.channels.push_back(refrange::text::bvh::channel_Xposition);
+        root.channels.push_back(refrange::text::bvh::channel_Yposition);
+        root.channels.push_back(refrange::text::bvh::channel_Zposition);
+        root.channels.push_back(refrange::text::bvh::channel_Zrotation);
+        root.channels.push_back(refrange::text::bvh::channel_Yrotation);
+        root.channels.push_back(refrange::text::bvh::channel_Xrotation);
+    }
+#endif
 
+    EXPECT_EQ(root, bvh.get_joints().front());
 	EXPECT_EQ(bvh.get_channel_count(), bvh.get_frames().front().values.size());
 }
 

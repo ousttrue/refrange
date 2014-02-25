@@ -3,6 +3,7 @@
 #include "../tree.h"
 #include <memory>
 #include <array>
+#include <string>
 
 
 namespace refrange {
