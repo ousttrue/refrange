@@ -63,7 +63,7 @@ public:
 
         {
             auto header=r.read_str(30);
-            if(header=="Vocaloid Motion Data 0002"){
+            if(header!="Vocaloid Motion Data 0002"){
                 return false;
             }
         }
