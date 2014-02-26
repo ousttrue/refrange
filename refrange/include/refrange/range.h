@@ -53,7 +53,7 @@ public:
     std::string to_str()const{ 
         auto end=m_begin;
         for(; end!=m_end; ++end){
-            if(*end=='0'){
+            if(*end=='\0'){
                 break;
             }
         }
