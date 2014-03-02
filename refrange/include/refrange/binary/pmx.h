@@ -707,16 +707,40 @@ private:
             case 2:
                 // BDEF4
                 {
-                    assert(false);
-                    throw std::invalid_argument(__FUNCTION__);
+                    unsigned int bone_index_0=read_bone_index(r);
+                    unsigned int bone_index_1=read_bone_index(r);
+                    unsigned int bone_index_2=read_bone_index(r);
+                    unsigned int bone_index_3=read_bone_index(r);
+                    float weight0;
+                    r.read_value(weight0);
+                    float weight1;
+                    r.read_value(weight1);
+                    float weight2;
+                    r.read_value(weight2);
+                    float weight3;
+                    r.read_value(weight3);
                 }
                 break;
 
             case 3:
                 // SDEF
                 {
-                    assert(false);
-                    throw std::invalid_argument(__FUNCTION__);
+                    unsigned int bone_index_0=read_bone_index(r);
+                    unsigned int bone_index_1=read_bone_index(r);
+                    float weight0;
+                    r.read_value(weight0);
+                    vec3 c;
+                    r.read_value(c.x);
+                    r.read_value(c.y);
+                    r.read_value(c.z);
+                    vec3 r0;
+                    r.read_value(r0.x);
+                    r.read_value(r0.y);
+                    r.read_value(r0.z);
+                    vec3 r1;
+                    r.read_value(r1.x);
+                    r.read_value(r1.y);
+                    r.read_value(r1.z);
                 }
                 break;
 
