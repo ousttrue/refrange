@@ -10,6 +10,16 @@ namespace binary {
 namespace pmx {
 
 
+struct vec2
+{
+    float x;
+    float y;
+
+    vec2()
+        : x(0), y(0)
+    {}
+};
+
 struct vec3
 {
     float x;
@@ -21,14 +31,15 @@ struct vec3
     {}
 };
 
-
-struct vec2
+struct vec4
 {
     float x;
     float y;
+    float z;
+    float w;
 
-    vec2()
-        : x(0), y(0)
+    vec4()
+        : x(0), y(0), z(0), w(0)
     {}
 };
 
@@ -228,6 +239,50 @@ struct joint
 };
 
 
+class pmx_range_reader: public range_reader
+{
+    unsigned char m_flags[8];
+
+public:
+    pmx_range_reader(const immutable_range &src)
+        : range_reader(src)
+    {}
+
+    void set_flags(const unsigned char flags[8])
+    {
+        memcpy(m_flags, flags, 8);
+    }
+
+    float read_float()
+    {
+        float v;
+        read_value(v);
+        return v;
+    }
+
+    vec2 read_vec2()
+    {
+        vec2 v;
+        read_value(v);
+        return v;
+    }
+
+    vec3 read_vec3()
+    {
+        vec3 v;
+        read_value(v);
+        return v;
+    }
+
+    vec4 read_vec4()
+    {
+        vec4 v;
+        read_value(v);
+        return v;
+    }
+};
+
+
 class loader
 {
     float m_version;
@@ -275,7 +330,7 @@ public:
 
     bool load(const immutable_range &src)
     {
-        range_reader r(src);
+        pmx_range_reader r(src);
 
         // header
         auto magic=r.read_range(4);
@@ -290,6 +345,7 @@ public:
         assert(flagbytes==8);
 
         r.read(m_flags, 8);
+        r.set_flags(m_flags);
 
         // model info
         m_name=read_text(r);
@@ -496,7 +552,7 @@ private:
         }
     }
 
-    void read_morph(range_reader &r)
+    void read_morph(pmx_range_reader &r)
     {
         m_morphs.push_back(morph());
         auto &m=m_morphs.back();
@@ -513,7 +569,11 @@ private:
         {
             case 0:
                 // group
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_morph_index(r);
+                    r.read_float();
+                }
+				break;
 
             case 1:
                 // vertex
@@ -522,31 +582,72 @@ private:
 
             case 2:
                 // bone
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_bone_index(r);
+                    r.read_vec3();
+                    r.read_vec4();
+                }
+				break;
 
             case 3:
                 // uv
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_vertex_index(r);
+                    r.read_vec2();
+                }
+				break;
 
             case 4:
                 // uv + 1
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_vertex_index(r);
+                    r.read_vec2();
+                }
+				break;
 
             case 5:
                 // uv + 2
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_vertex_index(r);
+                    r.read_vec2();
+                }
+				break;
 
             case 6:
                 // uv + 3
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_vertex_index(r);
+                    r.read_vec2();
+                }
+				break;
 
             case 7:
                 // uv + 4
-                throw std::invalid_argument(__FUNCTION__);
+                for(int i=0; i<morph_count; ++i){
+                    read_vertex_index(r);
+                    r.read_vec2();
+                }
+				break;
 
-            case 8:
-                // material
-                throw std::invalid_argument(__FUNCTION__);
+			case 8:
+                for(int i=0; i<morph_count; ++i){
+                    // material
+                    read_material_index(r);
+                    r.read_byte();
+                    vec4 v4;
+                    vec3 v3;
+                    float f;
+                    r.read_value(v4);
+                    r.read_value(v3);
+                    r.read_value(f);
+                    r.read_value(v3);
+					r.read_value(v4);
+                    r.read_value(f);
+                    r.read_value(v4);
+                    r.read_value(v4);
+                    r.read_value(v4);
+                }
+				break;
 
             default:
                 throw std::invalid_argument(__FUNCTION__);
