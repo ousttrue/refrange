@@ -50,6 +50,8 @@ TEST(PmdTest, pmd)
 	//auto &b=pmd.get_bones().front();
 	//EXPECT_STREQ("ÉZÉìÉ^Å[", b.name.c_str());
 
+    EXPECT_EQ(7, pmd.get_iklist().size());
+
     EXPECT_EQ(30, pmd.get_morphs().size());
     EXPECT_EQ(45, pmd.get_rigidbodies().size());
     EXPECT_EQ(27, pmd.get_joints().size());

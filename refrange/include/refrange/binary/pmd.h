@@ -111,6 +111,16 @@ struct joint
 };
 
 
+struct ik
+{
+    unsigned short target_bone;
+    unsigned short effector_bone;
+    unsigned short iteration;
+    float limit_angle;
+    std::vector<unsigned short> children;
+};
+
+
 class pmd_range_reader: public range_reader
 {
 public:
@@ -159,6 +169,7 @@ class loader
     //std::vector<std::wstring> m_textures;
     std::vector<material> m_materials;
     std::vector<bone> m_bones;
+    std::vector<ik> m_iklist;
     std::vector<morph> m_morphs;
     //std::vector<group> m_groups;
 	std::vector<rigidbody> m_rigidbodies;
@@ -235,7 +246,30 @@ public:
             r.read_value(b.ik_bone);
             r.read_value(b.pos);
         }
-        
+
+        // ik
+        unsigned short ik_count;
+        r.read_value(ik_count);
+        m_iklist.resize(ik_count);
+        for(size_t i=0; i<ik_count; ++i){
+            auto &ik=m_iklist[i];
+            r.read_value(ik.target_bone);
+            r.read_value(ik.effector_bone);
+
+            unsigned char length;
+            r.read_value(length);
+            ik.children.resize(length);
+
+            r.read_value(ik.iteration);
+            r.read_value(ik.limit_angle);
+
+            for(size_t i=0; i<length; ++i){
+                r.read_value(ik.children[i]);
+            }
+        }
+
+        // morph
+
         return true;
     }
 
@@ -244,6 +278,7 @@ public:
     std::vector<unsigned int>& get_indices(){ return m_indices; }
     std::vector<material>& get_materials(){ return m_materials; }
     std::vector<bone>& get_bones(){ return m_bones; }
+    std::vector<ik>& get_iklist(){ return m_iklist; }
     std::vector<morph>& get_morphs(){ return m_morphs; }
     //std::vector<group>& get_groups(){ return m_groups; }
     std::vector<rigidbody>& get_rigidbodies(){ return m_rigidbodies; }
