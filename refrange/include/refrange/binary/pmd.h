@@ -62,16 +62,25 @@ struct bone
 };
 
 
+struct morph_vertex
+{
+    unsigned int index;
+    vec3 offset;
+};
+
+
 struct morph
 {
+    std::string name;
+    unsigned char morph_type;
+    std::vector<morph_vertex> vertices;
 };
 
 
 struct rigidbody
 {
-    int bone_index;
-    std::wstring name;
-    std::wstring nameEnglish;
+    unsigned short bone_index;
+    std::string name;
     unsigned char group;
     unsigned short mask;
     unsigned char shape_type;
@@ -95,8 +104,7 @@ struct rigidbody
 
 struct joint
 {
-    std::wstring name;
-    std::wstring nameEnglish;
+    std::string name;
     int rigidbody_a;
     int rigidbody_b;
     unsigned char type;
@@ -269,6 +277,110 @@ public:
         }
 
         // morph
+        unsigned short morph_count;
+        r.read_value(morph_count);
+        m_morphs.resize(morph_count);
+        for(size_t i=0; i<morph_count; ++i){
+            auto &m=m_morphs[i];
+            m.name=r.read_range(20).to_str();
+            unsigned int vertex_count;
+            r.read_value(vertex_count);
+            m.vertices.resize(vertex_count);
+            r.read_value(m.morph_type);
+            for(size_t j=0; j<vertex_count; ++j){
+                auto &v=m.vertices[j];
+                r.read_value(v.index);
+                r.read_value(v.offset);
+            }
+        }
+
+        // ui settings
+        unsigned char morph_display_count;
+        r.read_value(morph_display_count);
+        for(size_t i=0; i<morph_display_count; ++i){
+            unsigned short morph_display;
+            r.read_value(morph_display);
+        }
+
+        unsigned char bone_display_group_count;
+        r.read_value(bone_display_group_count);
+        for(size_t i=0; i<bone_display_group_count; ++i){
+            std::string name=r.read_range(50).to_str();
+        }
+
+        unsigned int bone_display_count;
+        r.read_value(bone_display_count);
+        for(size_t i=0; i<bone_display_count; ++i){
+            unsigned short bone_index;
+            r.read_value(bone_index);
+            unsigned char bone_display;
+            r.read_value(bone_display);
+        }
+
+        unsigned char english_name_compatibility;
+        r.read_value(english_name_compatibility);
+        if(english_name_compatibility){
+            // english names
+            std::string english_name=r.read_range(20).to_str();
+            std::string english_comment=r.read_range(256).to_str();
+
+            for(size_t i=0; i<m_bones.size(); ++i){
+                std::string english_name=r.read_range(20).to_str();
+            }
+
+            for(size_t i=0; i<m_morphs.size()-1; ++i){
+                std::string english_name=r.read_range(20).to_str();
+            }
+            
+            for(size_t i=0; i<bone_display_group_count; ++i){
+                std::string english_name=r.read_range(50).to_str();
+            }
+
+            for(int i=0; i<10; ++i){
+                std::string toon_texture=r.read_range(100).to_str();
+            }
+
+            // rigidbody
+            unsigned int rigidbody_count;
+            r.read_value(rigidbody_count);
+            m_rigidbodies.resize(rigidbody_count);
+            for(size_t i=0; i<rigidbody_count; ++i){
+                auto &rb=m_rigidbodies[i];
+                rb.name=r.read_range(20).to_str();
+                r.read_value(rb.bone_index);
+                r.read_value(rb.group);
+                r.read_value(rb.mask);
+                r.read_value(rb.shape_type);
+                r.read_value(rb.shape_size);
+                r.read_value(rb.shape_pos);
+                r.read_value(rb.shape_rot);
+                r.read_value(rb.mass);
+                r.read_value(rb.linear_damping);
+                r.read_value(rb.anglar_damping);
+                r.read_value(rb.restitution);
+                r.read_value(rb.friction);
+                r.read_value(rb.type);
+            }
+
+            // joints
+            unsigned int joint_count;
+            r.read_value(joint_count);
+            m_joints.resize(joint_count);
+            for(size_t i=0; i<joint_count; ++i){
+                auto &j=m_joints[i];
+                j.name=r.read_range(20).to_str();
+                r.read_value(j.rigidbody_a);
+                r.read_value(j.rigidbody_b);
+                r.read_value(j.pos);
+                r.read_value(j.rot);
+                r.read_value(j.translation_min);
+                r.read_value(j.translation_max);
+                r.read_value(j.rotation_min);
+                r.read_value(j.rotation_max);
+                r.read_value(j.spring_translation);
+                r.read_value(j.spring_rotation);
+            }
+        }
 
         return true;
     }

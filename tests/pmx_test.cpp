@@ -52,7 +52,7 @@ TEST(PmdTest, pmd)
 
     EXPECT_EQ(7, pmd.get_iklist().size());
 
-    EXPECT_EQ(30, pmd.get_morphs().size());
+    EXPECT_EQ(30+1, pmd.get_morphs().size());
     EXPECT_EQ(45, pmd.get_rigidbodies().size());
     EXPECT_EQ(27, pmd.get_joints().size());
 
