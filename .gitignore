@@ -1,2 +1,12 @@
 build
 samples
+
+debug
+release
+obj
+ipch
+*.sln
+*.suo
+*.vcxproj*
+*.sdf
+*.opensdf
