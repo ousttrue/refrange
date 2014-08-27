@@ -1,6 +1,9 @@
 #pragma once
 #include "range.h"
-
+#ifdef _MSC_VER
+#else
+#include <string.h>
+#endif
 
 namespace refrange {
 

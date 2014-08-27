@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <assert.h>
 #include "text.h"
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#include <Windows.h>
+#endif
 
 
 namespace refrange {
@@ -182,7 +185,7 @@ public:
                 break;
             }
         }
-        return immutable_range(begin, end);
+        return range<T>(begin, end);
     }
 
     std::list<range<T>> split(char c)const
@@ -221,12 +224,12 @@ public:
 
     range<T> ltrim()const
     {
-        auto range=find_range_if(&text::is_space<T>);
+        auto found=find_range_if(&text::is_space<T>);
         auto begin=m_begin;
-        if(range && range.begin()==m_begin){
-            begin=range.end();
+        if(found && found.begin()==m_begin){
+            begin=found.end();
         }
-        return immutable_range(begin, m_end);
+        return range<T>(begin, m_end);
     }
 };
 typedef range<const unsigned char*> immutable_range;
@@ -263,6 +266,27 @@ inline immutable_range vectorrange(const std::vector<unsigned char> &v)
     return immutable_range(&v[0], &v[0]+v.size());
 }
 
+
+inline std::vector<unsigned char> readfile(const wchar_t *path)
+{
+    std::vector<unsigned char> buf;
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+    auto hFile = CreateFileW(path
+            , GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0 );
+    if(hFile==INVALID_HANDLE_VALUE){
+        return buf;
+    }
+    auto FileSize = GetFileSize(hFile, 0);
+    if(FileSize==0){
+        return buf;
+    }
+    buf.resize(FileSize);
+    unsigned long nRead;
+    ReadFile(hFile, &buf[0], buf.size(), &nRead, 0);
+    CloseHandle(hFile);
+#endif
+    return buf;
+}
 
 inline std::vector<unsigned char> readfile(const char *path)
 {

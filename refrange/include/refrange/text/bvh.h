@@ -164,7 +164,7 @@ private:
                 j.channels.push_back(channel_Zrotation);
             }
             else{
-                throw std::exception(__FUNCTION__);
+                throw std::invalid_argument(__FUNCTION__);
             }
         }
     }

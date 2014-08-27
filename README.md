@@ -34,4 +34,5 @@ ToDo
 * unpacker エラー型(eof, 数値代入時のoverflow, underflow, 桁落ち)
 * sequence型api整理
 * 後で[msgpack-rpc-asio](https://github.com/ousttrue/msgpack-rpc-asio)のバックエンドにする
+* boost::string_refとかstd::string_viewみたいの(よくしらない)
 

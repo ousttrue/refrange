@@ -15,7 +15,7 @@ inline bool is_space(T p)
 
 
 template<typename T>
-inline bool is_digit(T p)
+inline bool is_digit(T *p)
 {
     return isdigit(*p) != 0;
 }

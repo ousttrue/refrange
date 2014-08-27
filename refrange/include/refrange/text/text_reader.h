@@ -1,6 +1,6 @@
 #pragma once
 #include "../reader.h"
-
+#include <stdexcept>
 
 namespace refrange {
 namespace text {
@@ -13,11 +13,13 @@ public:
         : range_reader(r)
     {}
 
+    template<typename T>
     int get_int()
     {
-        auto range=get_range().find_range_if(&is_digit<type>, get_current());
+        auto range=get_range().find_range_if(
+                &is_digit<T>, get_current());
         if(!range){
-            throw std::exception(__FUNCTION__);
+            throw std::invalid_argument(__FUNCTION__);
         }
 		set_current(range.end());
 

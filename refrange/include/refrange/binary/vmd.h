@@ -27,7 +27,7 @@ struct quaternion
 };
 
 
-struct frame
+struct boneframe
 {
     std::string bonename;
     unsigned int framenum;
@@ -35,7 +35,20 @@ struct frame
     quaternion rot;
     char interpolate[64];
 
-    bool operator<(const frame &rhs)const
+    bool operator<(const boneframe &rhs)const
+    {
+        return framenum<rhs.framenum;
+    }
+};
+
+
+struct morphframe
+{
+	std::string morphname;
+	unsigned int framenum;
+	float value;
+
+    bool operator<(const morphframe &rhs)const
     {
         return framenum<rhs.framenum;
     }
@@ -45,7 +58,8 @@ struct frame
 class loader
 {
 	std::string m_modelname;
-    std::vector<frame> m_frames;
+    std::vector<boneframe> m_boneframes;
+	std::vector<morphframe> m_morphframes;
     unsigned int m_maxframenum;
 
 public:
@@ -54,7 +68,8 @@ public:
     {}
 
     std::string get_modelname()const{ return m_modelname; }
-    std::vector<frame> &get_frames(){ return m_frames; }
+    std::vector<boneframe> &get_boneframes(){ return m_boneframes; }
+	std::vector<morphframe> &get_morphframes(){ return m_morphframes; }
     unsigned int get_maxframenum(){ return m_maxframenum; }
 
     bool load(const immutable_range &src)
@@ -77,9 +92,9 @@ public:
             unsigned int motionCount;
             r.read_value(motionCount);
 
-            m_frames.resize(motionCount);
+            m_boneframes.resize(motionCount);
 			for (unsigned int i = 0; i < motionCount; ++i){
-				auto &f = m_frames[i];
+				auto &f = m_boneframes[i];
 
 				f.bonename = r.read_str(15);
 				r.read_value(f.framenum);
@@ -99,6 +114,20 @@ public:
         }
 
         // morph
+		{
+            unsigned int frameCount;
+            r.read_value(frameCount);
+
+            m_morphframes.resize(frameCount);
+			for (unsigned int i = 0; i < frameCount; ++i){
+				auto &f = m_morphframes[i];
+
+				f.morphname = r.read_str(15);
+				r.read_value(f.framenum);
+                m_maxframenum=std::max(m_maxframenum, f.framenum);
+				r.read_value(f.value);
+			}
+		}
 
         // camera
 

@@ -114,10 +114,14 @@ struct bone
     unsigned short flag;
 
     bool flag_connect()const{
-        return flag & 0x0001;
+        return (flag & 0x0001)!=0;
     }
     vec3 tail_pos;
     int tail_bone;
+
+    bool flag_visible()const{
+		return (flag & 0x0008) != 0;
+    }
 
     bool flag_reference_rotation()const{
         return (flag & 0x0100)!=0;
