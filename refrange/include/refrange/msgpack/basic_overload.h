@@ -85,7 +85,8 @@ inline unpacker& operator>>(unpacker &unpacker, immutable_range &r)
             unpacker >> br;
         }
 		r = immutable_range(begin, unpacker.range().get_current());
-    }
+		return unpacker;
+	}
     else if(unpacker.is_map()){
 		auto begin = unpacker.range().get_current();
         auto c=array();
@@ -98,6 +99,7 @@ inline unpacker& operator>>(unpacker &unpacker, immutable_range &r)
             unpacker >> br;
         }
 		r = immutable_range(begin, unpacker.range().get_current());
+		return unpacker;
     }
     else {
         return unpacker.unpack(create_buffer(r)); 

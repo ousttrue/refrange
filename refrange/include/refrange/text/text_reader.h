@@ -13,11 +13,10 @@ public:
         : range_reader(r)
     {}
 
-    template<typename T>
     int get_int()
     {
         auto range=get_range().find_range_if(
-                &is_digit<T>, get_current());
+                &is_digit<const unsigned char>, get_current());
         if(!range){
             throw std::invalid_argument(__FUNCTION__);
         }
