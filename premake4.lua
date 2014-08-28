@@ -5,6 +5,10 @@ configurations {
     "Release",
 }
 
+defines {
+    'SAMPLES_DIR="../refrangetest_samples"'
+}
+
 configuration "gmake Debug"
 do
     buildoptions { "-g" }

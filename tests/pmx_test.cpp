@@ -5,7 +5,7 @@
 
 TEST(PmxTest, pmx) 
 {
-    auto path="../../../refrangetest_samples/miku_v2.pmx";
+	auto path = SAMPLES_DIR "/miku_v2.pmx";
     auto buf=refrange::readfile(path);
     ASSERT_FALSE(buf.empty());
     //ASSERT_EQ(726361, buf.size());
@@ -32,7 +32,7 @@ TEST(PmxTest, pmx)
 
 TEST(PmdTest, pmd) 
 {
-    auto path="../../../refrangetest_samples/miku_v2.pmd";
+	auto path = SAMPLES_DIR "/miku_v2.pmd";
     auto buf=refrange::readfile(path);
     ASSERT_FALSE(buf.empty());
     //ASSERT_EQ(726361, buf.size());

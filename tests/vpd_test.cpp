@@ -4,7 +4,7 @@
 
 TEST(VpdTest, loader) 
 {
-    auto path="../../../refrangetest_samples/sample.vpd";
+	auto path = SAMPLES_DIR "/sample.vpd";
     auto buf=refrange::readfile(path);
     refrange::text::vpd::loader vpd;
     ASSERT_TRUE(vpd.load(refrange::vectorrange(buf)));

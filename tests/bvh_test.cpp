@@ -117,7 +117,7 @@ TEST(BvhTest, loader)
 
 TEST(BvhTest, load_from_file) 
 {
-    auto path="../../../refrangetest_samples/sample.bvh";
+    auto path=SAMPLES_DIR "/sample.bvh";
 	auto buf = refrange::readfile(path);
 	ASSERT_FALSE(buf.empty());
 
